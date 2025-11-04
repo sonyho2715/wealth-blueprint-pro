@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import { formatCurrency, formatPercentage } from '../../utils/calculations';
 import LivingBalanceSheet from './LivingBalanceSheet';
 import GoalsAndRecommendations from './GoalsAndRecommendations';
+import WhatIfScenarios from './WhatIfScenarios';
+import RetirementProjection from './RetirementProjection';
+import DebtStrategy from './DebtStrategy';
+import PeerBenchmark from './PeerBenchmark';
+import TaxOptimization from './TaxOptimization';
 import {
   DollarSign,
   TrendingUp,
@@ -11,10 +17,15 @@ import {
   PiggyBank,
   CreditCard,
   Activity,
+  GitCompare,
+  LineChart,
+  Users,
+  Receipt,
 } from 'lucide-react';
 
 export default function Dashboard() {
   const { currentClient, currentMetrics } = useClientStore();
+  const [activeSection, setActiveSection] = useState<string>('overview');
 
   if (!currentClient || !currentMetrics) {
     return null;
@@ -34,24 +45,56 @@ export default function Dashboard() {
     return 'Critical';
   };
 
+  const sections = [
+    { id: 'overview', name: 'Overview', icon: <Activity className="w-4 h-4" /> },
+    { id: 'whatif', name: 'What-If', icon: <GitCompare className="w-4 h-4" /> },
+    { id: 'retirement', name: 'Retirement', icon: <LineChart className="w-4 h-4" /> },
+    { id: 'debt', name: 'Debt Payoff', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'peers', name: 'Benchmarks', icon: <Users className="w-4 h-4" /> },
+    { id: 'tax', name: 'Tax Optimization', icon: <Receipt className="w-4 h-4" /> },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Financial Snapshot Section */}
-      <LivingBalanceSheet />
-
-      {/* Goals & Recommendations Section */}
-      <GoalsAndRecommendations />
-
-      {/* Divider */}
-      <div className="border-t-2 border-gray-200 pt-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Health Score & Key Metrics</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Detailed analysis for {currentClient.name} • Age {currentClient.age}
-          </p>
+    <div className="space-y-6">
+      {/* Section Navigation */}
+      <div className="card-gradient">
+        <div className="flex flex-wrap gap-2">
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
+                activeSection === section.id
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              {section.icon}
+              <span>{section.name}</span>
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Active Section Content */}
+      {activeSection === 'overview' && (
+        <div className="space-y-8">
+          {/* Financial Snapshot Section */}
+          <LivingBalanceSheet />
+
+          {/* Goals & Recommendations Section */}
+          <GoalsAndRecommendations />
+
+          {/* Divider */}
+          <div className="border-t-2 border-gray-200 pt-8">
+            {/* Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Health Score & Key Metrics</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Detailed analysis for {currentClient.name} • Age {currentClient.age}
+              </p>
+            </div>
+          </div>
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -237,6 +280,23 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+        </div>
+      )}
+
+      {/* What-If Scenarios */}
+      {activeSection === 'whatif' && <WhatIfScenarios />}
+
+      {/* Retirement Projection */}
+      {activeSection === 'retirement' && <RetirementProjection />}
+
+      {/* Debt Strategy */}
+      {activeSection === 'debt' && <DebtStrategy />}
+
+      {/* Peer Benchmarking */}
+      {activeSection === 'peers' && <PeerBenchmark />}
+
+      {/* Tax Optimization */}
+      {activeSection === 'tax' && <TaxOptimization />}
     </div>
   );
 }
