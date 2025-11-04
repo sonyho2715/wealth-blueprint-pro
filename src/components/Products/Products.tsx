@@ -1,6 +1,6 @@
 import { useClientStore } from '../../store/clientStore';
 import { generateInsuranceRecommendations } from '../../utils/insurance';
-import { Shield, AlertCircle, Check } from 'lucide-react';
+import { Shield, AlertCircle, Check, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '../../utils/calculations';
 
 export default function Products() {

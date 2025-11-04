@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useClientStore } from '../../store/clientStore';
-import { ClientData } from '../../types/financial.types';
+import type { ClientData } from '../../types/financial.types';
 import { Save, Upload, Trash2 } from 'lucide-react';
 
 export default function ClientInput() {

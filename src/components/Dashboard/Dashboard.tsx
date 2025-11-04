@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { currentClient, currentMetrics, currentRisk } = useClientStore();
+  const { currentClient, currentMetrics } = useClientStore();
 
   if (!currentClient || !currentMetrics) {
     return null;

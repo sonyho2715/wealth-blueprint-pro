@@ -1,4 +1,4 @@
-import { InsuranceQuote, InsuranceProduct } from '../types/financial.types';
+import type { InsuranceQuote, InsuranceProduct } from '../types/financial.types';
 
 /**
  * Calculate term life insurance premium estimate

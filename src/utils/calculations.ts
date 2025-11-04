@@ -1,4 +1,4 @@
-import { ClientData, FinancialMetrics, RiskAssessment, RiskCategory } from '../types/financial.types';
+import type { ClientData, FinancialMetrics, RiskAssessment, RiskCategory } from '../types/financial.types';
 
 /**
  * Calculate all financial metrics from client data
