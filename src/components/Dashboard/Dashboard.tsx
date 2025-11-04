@@ -1,5 +1,6 @@
 import { useClientStore } from '../../store/clientStore';
 import { formatCurrency, formatPercentage } from '../../utils/calculations';
+import LivingBalanceSheet from './LivingBalanceSheet';
 import {
   DollarSign,
   TrendingUp,
@@ -33,13 +34,19 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Financial Dashboard</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Overview for {currentClient.name} • Age {currentClient.age}
-        </p>
+    <div className="space-y-8">
+      {/* Living Balance Sheet Section */}
+      <LivingBalanceSheet />
+
+      {/* Divider */}
+      <div className="border-t-2 border-gray-200 pt-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Financial Metrics & Analysis</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Overview for {currentClient.name} • Age {currentClient.age}
+          </p>
+        </div>
       </div>
 
       {/* Key Metrics Grid */}

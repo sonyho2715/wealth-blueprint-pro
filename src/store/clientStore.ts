@@ -8,6 +8,12 @@ import type {
 } from '../types/financial.types';
 import { calculateFinancialMetrics, generateRiskAssessment } from '../utils/calculations';
 
+interface HistorySnapshot {
+  timestamp: string;
+  data: ClientData;
+  metrics: FinancialMetrics;
+}
+
 interface ClientStore {
   // Current client data
   currentClient: ClientData | null;
@@ -17,6 +23,9 @@ interface ClientStore {
   // Saved profiles
   profiles: Record<string, ClientProfile>;
 
+  // Historical tracking
+  history: HistorySnapshot[];
+
   // Actions
   setClientData: (data: ClientData) => void;
   calculateMetrics: () => void;
@@ -25,6 +34,8 @@ interface ClientStore {
   deleteProfile: (id: string) => void;
   clearCurrentClient: () => void;
   loadSampleData: () => void;
+  addHistorySnapshot: () => void;
+  clearHistory: () => void;
 }
 
 // Sample data for demo purposes
@@ -70,10 +81,13 @@ export const useClientStore = create<ClientStore>()(
       currentMetrics: null,
       currentRisk: null,
       profiles: {},
+      history: [],
 
       setClientData: (data: ClientData) => {
         set({ currentClient: data });
         get().calculateMetrics();
+        // Auto-save snapshot after metrics are calculated
+        setTimeout(() => get().addHistorySnapshot(), 100);
       },
 
       calculateMetrics: () => {
@@ -145,12 +159,33 @@ export const useClientStore = create<ClientStore>()(
       loadSampleData: () => {
         set({ currentClient: sampleData });
         get().calculateMetrics();
+        setTimeout(() => get().addHistorySnapshot(), 100);
+      },
+
+      addHistorySnapshot: () => {
+        const { currentClient, currentMetrics, history } = get();
+        if (!currentClient || !currentMetrics) return;
+
+        const snapshot: HistorySnapshot = {
+          timestamp: new Date().toISOString(),
+          data: { ...currentClient },
+          metrics: { ...currentMetrics },
+        };
+
+        // Keep only last 30 snapshots to prevent storage bloat
+        const newHistory = [...history, snapshot].slice(-30);
+        set({ history: newHistory });
+      },
+
+      clearHistory: () => {
+        set({ history: [] });
       },
     }),
     {
       name: 'wealth-blueprint-storage',
       partialize: (state) => ({
         profiles: state.profiles,
+        history: state.history,
       }),
     }
   )
