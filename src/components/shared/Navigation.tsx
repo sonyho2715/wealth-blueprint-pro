@@ -23,7 +23,7 @@ export default function Navigation({ activeTab, onTabChange, hasData }: Navigati
   ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-lg shadow-soft border-b border-gray-200/50 sticky top-0 z-40">
+    <nav className="bg-white shadow-soft border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
           {tabs.map((tab) => {
@@ -38,17 +38,17 @@ export default function Navigation({ activeTab, onTabChange, hasData }: Navigati
                 disabled={!isEnabled}
                 className={`
                   relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap
-                  transition-all duration-300 group
+                  transition-all duration-200 group
                   ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
                       : isEnabled
-                      ? 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:scale-105 hover:shadow-soft'
+                      ? 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-soft'
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                   }
                 `}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'animate-pulse' : ''}`} />
+                <Icon className="w-4 h-4" />
                 <span>{tab.name}</span>
                 {!isEnabled && !tab.alwaysEnabled && (
                   <Lock className="w-3 h-3 opacity-50" />

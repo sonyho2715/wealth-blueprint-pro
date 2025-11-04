@@ -14,7 +14,7 @@
 @layer components {
   /* Modern Buttons */
   .btn {
-    @apply px-6 py-2.5 rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] shadow-sm;
+    @apply px-6 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm;
   }
 
   .btn-primary {
@@ -35,20 +35,20 @@
 
   /* Modern Cards */
   .card {
-    @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1;
+    @apply bg-white/90 rounded-2xl shadow-soft border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200;
   }
 
   .card-gradient {
-    @apply bg-gradient-to-br from-white to-blue-50/50 backdrop-blur-sm rounded-2xl shadow-soft border border-blue-100 p-6 hover:shadow-glow transition-all duration-300;
+    @apply bg-gradient-to-br from-white to-blue-50/50 rounded-2xl shadow-soft border border-blue-100 p-6 hover:shadow-glow transition-shadow duration-200;
   }
 
   .card-highlight {
-    @apply bg-gradient-to-br from-blue-50 to-purple-50 backdrop-blur-sm rounded-2xl shadow-soft border-2 border-blue-200 p-6 hover:shadow-glow-lg transition-all duration-300 relative overflow-hidden;
+    @apply bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-soft border-2 border-blue-200 p-6 hover:shadow-glow-lg transition-shadow duration-200 relative overflow-hidden;
   }
 
   /* Modern Inputs */
   .input {
-    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm hover:border-blue-300;
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-150 bg-white hover:border-blue-300;
   }
 
   .label {
@@ -78,7 +78,7 @@
 
   /* Stat Card */
   .stat-card {
-    @apply bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border-2 border-gray-100 hover:border-blue-200 transition-all duration-300 hover:shadow-soft group;
+    @apply bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border-2 border-gray-100 hover:border-blue-200 transition-colors duration-200 group;
   }
 
   /* Gradient Text */

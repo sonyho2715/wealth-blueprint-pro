@@ -60,7 +60,7 @@ export const agentConfig: AgentConfig = {
   agentName: "Sony Ho",
   agentTitle: "Professional Financial Consultant",
   agentEmail: "mrsonyho@gmail.com",
-  agentPhone: "(555) 123-4567", // Update with real number
+  agentPhone: "(808) 383-7520",
   agentWebsite: "https://sonyho.com", // Update with real website
   agentLogo: undefined, // Path to logo image in /public folder
 

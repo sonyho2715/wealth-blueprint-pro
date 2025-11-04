@@ -18,13 +18,13 @@ export default function Header({ agentName, platformName, platformTagline }: Hea
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2 animate-slide-down">
-              <div className="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 shadow-lg">
+              <div className="p-2.5 bg-white/20 rounded-xl border border-white/30 shadow-lg">
                 <Building2 className="w-7 h-7 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-extrabold text-white flex items-center gap-2">
                   {platformName}
-                  <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
+                  <Sparkles className="w-6 h-6 text-yellow-300" />
                 </h1>
                 <p className="text-blue-100 text-sm md:text-base font-medium mt-0.5">
                   {platformTagline}
@@ -42,7 +42,7 @@ export default function Header({ agentName, platformName, platformTagline }: Hea
                   {agentConfig.agentEmail && (
                     <a
                       href={`mailto:${agentConfig.agentEmail}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-200 hover:scale-105"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors duration-150"
                     >
                       <Mail className="w-4 h-4" />
                       <span className="hidden sm:inline">{agentConfig.agentEmail}</span>
@@ -51,7 +51,7 @@ export default function Header({ agentName, platformName, platformTagline }: Hea
                   {agentConfig.agentPhone && (
                     <a
                       href={`tel:${agentConfig.agentPhone}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-200 hover:scale-105"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors duration-150"
                     >
                       <Phone className="w-4 h-4" />
                       <span>{agentConfig.agentPhone}</span>
