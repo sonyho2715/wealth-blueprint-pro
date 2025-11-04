@@ -1,6 +1,71 @@
 import type { ClientData, FinancialMetrics, RiskAssessment, RiskCategory } from '../types/financial.types';
 
 /**
+ * Calculate Hawaii State Tax for 2024
+ */
+export function calculateHawaiiTax(taxableIncome: number): { stateTax: number; federalTax: number; totalTax: number; effectiveRate: number } {
+  // Hawaii State Tax Brackets 2024 (Single filer - adjust for married)
+  let stateTax = 0;
+
+  if (taxableIncome <= 2400) {
+    stateTax = taxableIncome * 0.014;
+  } else if (taxableIncome <= 4800) {
+    stateTax = 2400 * 0.014 + (taxableIncome - 2400) * 0.032;
+  } else if (taxableIncome <= 9600) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + (taxableIncome - 4800) * 0.055;
+  } else if (taxableIncome <= 14400) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + (taxableIncome - 9600) * 0.064;
+  } else if (taxableIncome <= 19200) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + (taxableIncome - 14400) * 0.068;
+  } else if (taxableIncome <= 24000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + (taxableIncome - 19200) * 0.072;
+  } else if (taxableIncome <= 36000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + (taxableIncome - 24000) * 0.076;
+  } else if (taxableIncome <= 48000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + (taxableIncome - 36000) * 0.079;
+  } else if (taxableIncome <= 150000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + 12000 * 0.079 + (taxableIncome - 48000) * 0.0825;
+  } else if (taxableIncome <= 175000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + 12000 * 0.079 + 102000 * 0.0825 + (taxableIncome - 150000) * 0.09;
+  } else if (taxableIncome <= 200000) {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + 12000 * 0.079 + 102000 * 0.0825 + 25000 * 0.09 + (taxableIncome - 175000) * 0.10;
+  } else {
+    stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + 12000 * 0.079 + 102000 * 0.0825 + 25000 * 0.09 + 25000 * 0.10 + (taxableIncome - 200000) * 0.11;
+  }
+
+  // Federal Tax (simplified progressive rates for 2024)
+  let federalTax = 0;
+  const standardDeduction = 29200; // 2024 married filing jointly
+  const federalTaxableIncome = Math.max(0, taxableIncome - standardDeduction);
+
+  if (federalTaxableIncome <= 22000) {
+    federalTax = federalTaxableIncome * 0.10;
+  } else if (federalTaxableIncome <= 89075) {
+    federalTax = 22000 * 0.10 + (federalTaxableIncome - 22000) * 0.12;
+  } else if (federalTaxableIncome <= 190750) {
+    federalTax = 22000 * 0.10 + 67075 * 0.12 + (federalTaxableIncome - 89075) * 0.22;
+  } else if (federalTaxableIncome <= 364200) {
+    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + (federalTaxableIncome - 190750) * 0.24;
+  } else if (federalTaxableIncome <= 462500) {
+    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + (federalTaxableIncome - 364200) * 0.32;
+  } else if (federalTaxableIncome <= 693750) {
+    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + (federalTaxableIncome - 462500) * 0.35;
+  } else {
+    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + 231250 * 0.35 + (federalTaxableIncome - 693750) * 0.37;
+  }
+
+  const totalTax = stateTax + federalTax;
+  const effectiveRate = taxableIncome > 0 ? (totalTax / taxableIncome) * 100 : 0;
+
+  return {
+    stateTax,
+    federalTax,
+    totalTax,
+    effectiveRate,
+  };
+}
+
+/**
  * Calculate all financial metrics from client data
  */
 export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {

@@ -9,6 +9,7 @@ import DebtStrategy from './DebtStrategy';
 import PeerBenchmark from './PeerBenchmark';
 import TaxOptimization from './TaxOptimization';
 import BusinessOwnerDashboard from './BusinessOwnerDashboard';
+import LifePlanning from './LifePlanning';
 import {
   DollarSign,
   TrendingUp,
@@ -23,6 +24,7 @@ import {
   Users,
   Receipt,
   Briefcase,
+  Target,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -49,6 +51,7 @@ export default function Dashboard() {
 
   const sections = [
     { id: 'overview', name: 'Overview', icon: <Activity className="w-4 h-4" /> },
+    { id: 'planning', name: 'Life Planning', icon: <Target className="w-4 h-4" /> },
     { id: 'whatif', name: 'What-If', icon: <GitCompare className="w-4 h-4" /> },
     { id: 'retirement', name: 'Retirement', icon: <LineChart className="w-4 h-4" /> },
     { id: 'debt', name: 'Debt Payoff', icon: <CreditCard className="w-4 h-4" /> },
@@ -285,6 +288,9 @@ export default function Dashboard() {
       </div>
         </div>
       )}
+
+      {/* Life Planning */}
+      {activeSection === 'planning' && <LifePlanning />}
 
       {/* What-If Scenarios */}
       {activeSection === 'whatif' && <WhatIfScenarios />}
