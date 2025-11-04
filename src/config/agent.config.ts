@@ -18,6 +18,17 @@ export interface AgentConfig {
   agentPhone: string;
   agentWebsite?: string;
   agentLogo?: string;
+  agentPhoto?: string; // Professional headshot
+  agentBio?: string; // Short bio (2-3 sentences)
+
+  // Professional Credentials
+  credentials?: {
+    certifications?: string[]; // e.g., ["CFP®", "CFA", "ChFC"]
+    licenses?: string[]; // e.g., ["Series 7", "Series 65", "Life & Health"]
+    yearsOfExperience?: number;
+    clientsServed?: number;
+    assetsUnderManagement?: string; // e.g., "$50M+"
+  };
 
   // Company Information
   companyName: string;
@@ -63,6 +74,17 @@ export const agentConfig: AgentConfig = {
   agentPhone: "(808) 383-7520",
   agentWebsite: "https://sonyho.com", // Update with real website
   agentLogo: undefined, // Path to logo image in /public folder
+  agentPhoto: undefined, // Path to professional headshot in /public folder
+  agentBio: "Helping families and business owners achieve financial freedom through comprehensive planning and strategic wealth management.",
+
+  // Professional Credentials
+  credentials: {
+    certifications: ["CFP®", "ChFC", "CLU"], // Update with actual certifications
+    licenses: ["Series 65", "Life & Health"], // Update with actual licenses
+    yearsOfExperience: 15,
+    clientsServed: 500,
+    assetsUnderManagement: "$50M+",
+  },
 
   // Company Information
   companyName: "Sony Ho Financial Services",

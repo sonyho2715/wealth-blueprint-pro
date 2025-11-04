@@ -8,6 +8,7 @@ import RetirementProjection from './RetirementProjection';
 import DebtStrategy from './DebtStrategy';
 import PeerBenchmark from './PeerBenchmark';
 import TaxOptimization from './TaxOptimization';
+import BusinessOwnerDashboard from './BusinessOwnerDashboard';
 import {
   DollarSign,
   TrendingUp,
@@ -21,6 +22,7 @@ import {
   LineChart,
   Users,
   Receipt,
+  Briefcase,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -52,6 +54,7 @@ export default function Dashboard() {
     { id: 'debt', name: 'Debt Payoff', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'peers', name: 'Benchmarks', icon: <Users className="w-4 h-4" /> },
     { id: 'tax', name: 'Tax Optimization', icon: <Receipt className="w-4 h-4" /> },
+    { id: 'business', name: 'Business Owner', icon: <Briefcase className="w-4 h-4" /> },
   ];
 
   return (
@@ -297,6 +300,9 @@ export default function Dashboard() {
 
       {/* Tax Optimization */}
       {activeSection === 'tax' && <TaxOptimization />}
+
+      {/* Business Owner Dashboard */}
+      {activeSection === 'business' && <BusinessOwnerDashboard />}
     </div>
   );
 }
