@@ -4,6 +4,7 @@ import {
   PieChart,
   AlertTriangle,
   ShoppingBag,
+  Lock,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -22,9 +23,9 @@ export default function Navigation({ activeTab, onTabChange, hasData }: Navigati
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white/80 backdrop-blur-lg shadow-soft border-b border-gray-200/50 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex space-x-8 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isEnabled = tab.alwaysEnabled || hasData;
@@ -36,24 +37,35 @@ export default function Navigation({ activeTab, onTabChange, hasData }: Navigati
                 onClick={() => isEnabled && onTabChange(tab.id)}
                 disabled={!isEnabled}
                 className={`
-                  flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm whitespace-nowrap
-                  transition-all duration-200
+                  relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap
+                  transition-all duration-300 group
                   ${
                     isActive
-                      ? 'border-blue-600 text-blue-600'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
                       : isEnabled
-                      ? 'border-transparent text-gray-700 hover:text-blue-600 hover:border-gray-300'
-                      : 'border-transparent text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:scale-105 hover:shadow-soft'
+                      : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                   }
                 `}
               >
-                <Icon className="w-5 h-5" />
-                {tab.name}
+                <Icon className={`w-4 h-4 ${isActive ? 'animate-pulse' : ''}`} />
+                <span>{tab.name}</span>
+                {!isEnabled && !tab.alwaysEnabled && (
+                  <Lock className="w-3 h-3 opacity-50" />
+                )}
+
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-white/50 rounded-full" />
+                )}
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Bottom shadow effect */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
     </nav>
   );
 }
