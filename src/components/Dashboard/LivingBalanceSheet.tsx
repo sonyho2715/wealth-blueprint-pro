@@ -175,10 +175,10 @@ export default function LivingBalanceSheet() {
           <div>
             <h2 className="text-3xl font-bold gradient-text flex items-center gap-2">
               <Activity className="w-8 h-8" />
-              Living Balance Sheet
+              Financial Snapshot
             </h2>
             <p className="text-gray-600 mt-2">
-              Real-time snapshot of your complete financial picture
+              Your complete financial picture at a glance
             </p>
           </div>
           <div className="text-right">
