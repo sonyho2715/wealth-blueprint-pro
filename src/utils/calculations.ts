@@ -1,9 +1,50 @@
 import type { ClientData, FinancialMetrics, RiskAssessment, RiskCategory } from '../types/financial.types';
 
 /**
+ * Calculate State Tax for Multiple States (2024)
+ */
+export function calculateStateTax(taxableIncome: number, state: 'Hawaii' | 'California' | 'Nevada' | 'Texas' | 'Florida' | 'New York'): { stateTax: number; federalTax: number; totalTax: number; effectiveRate: number; stateName: string } {
+  let stateTax = 0;
+
+  switch (state) {
+    case 'Hawaii':
+      stateTax = calculateHawaiiStateTax(taxableIncome);
+      break;
+    case 'California':
+      stateTax = calculateCaliforniaStateTax(taxableIncome);
+      break;
+    case 'Nevada':
+      stateTax = 0; // No state income tax
+      break;
+    case 'Texas':
+      stateTax = 0; // No state income tax
+      break;
+    case 'Florida':
+      stateTax = 0; // No state income tax
+      break;
+    case 'New York':
+      stateTax = calculateNewYorkStateTax(taxableIncome);
+      break;
+  }
+
+  // Federal Tax (same for all states)
+  const federalTax = calculateFederalTax(taxableIncome);
+  const totalTax = stateTax + federalTax;
+  const effectiveRate = taxableIncome > 0 ? (totalTax / taxableIncome) * 100 : 0;
+
+  return {
+    stateTax,
+    federalTax,
+    totalTax,
+    effectiveRate,
+    stateName: state,
+  };
+}
+
+/**
  * Calculate Hawaii State Tax for 2024
  */
-export function calculateHawaiiTax(taxableIncome: number): { stateTax: number; federalTax: number; totalTax: number; effectiveRate: number } {
+function calculateHawaiiStateTax(taxableIncome: number): number {
   // Hawaii State Tax Brackets 2024 (Single filer - adjust for married)
   let stateTax = 0;
 
@@ -33,35 +74,99 @@ export function calculateHawaiiTax(taxableIncome: number): { stateTax: number; f
     stateTax = 2400 * 0.014 + 2400 * 0.032 + 4800 * 0.055 + 4800 * 0.064 + 4800 * 0.068 + 4800 * 0.072 + 12000 * 0.076 + 12000 * 0.079 + 102000 * 0.0825 + 25000 * 0.09 + 25000 * 0.10 + (taxableIncome - 200000) * 0.11;
   }
 
-  // Federal Tax (simplified progressive rates for 2024)
-  let federalTax = 0;
+  return stateTax;
+}
+
+/**
+ * Calculate California State Tax for 2024
+ */
+function calculateCaliforniaStateTax(taxableIncome: number): number {
+  let stateTax = 0;
+
+  if (taxableIncome <= 20198) {
+    stateTax = taxableIncome * 0.01;
+  } else if (taxableIncome <= 47884) {
+    stateTax = 20198 * 0.01 + (taxableIncome - 20198) * 0.02;
+  } else if (taxableIncome <= 75576) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + (taxableIncome - 47884) * 0.04;
+  } else if (taxableIncome <= 104910) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + (taxableIncome - 75576) * 0.06;
+  } else if (taxableIncome <= 132590) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + 29334 * 0.06 + (taxableIncome - 104910) * 0.08;
+  } else if (taxableIncome <= 677278) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + 29334 * 0.06 + 27680 * 0.08 + (taxableIncome - 132590) * 0.093;
+  } else if (taxableIncome <= 812728) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + 29334 * 0.06 + 27680 * 0.08 + 544688 * 0.093 + (taxableIncome - 677278) * 0.103;
+  } else if (taxableIncome <= 1000000) {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + 29334 * 0.06 + 27680 * 0.08 + 544688 * 0.093 + 135450 * 0.103 + (taxableIncome - 812728) * 0.113;
+  } else {
+    stateTax = 20198 * 0.01 + 27686 * 0.02 + 27692 * 0.04 + 29334 * 0.06 + 27680 * 0.08 + 544688 * 0.093 + 135450 * 0.103 + 187272 * 0.113 + (taxableIncome - 1000000) * 0.123;
+  }
+
+  return stateTax;
+}
+
+/**
+ * Calculate New York State Tax for 2024
+ */
+function calculateNewYorkStateTax(taxableIncome: number): number {
+  let stateTax = 0;
+
+  if (taxableIncome <= 17150) {
+    stateTax = taxableIncome * 0.04;
+  } else if (taxableIncome <= 23600) {
+    stateTax = 17150 * 0.04 + (taxableIncome - 17150) * 0.045;
+  } else if (taxableIncome <= 27900) {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + (taxableIncome - 23600) * 0.0525;
+  } else if (taxableIncome <= 161550) {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + 4300 * 0.0525 + (taxableIncome - 27900) * 0.055;
+  } else if (taxableIncome <= 323200) {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + 4300 * 0.0525 + 133650 * 0.055 + (taxableIncome - 161550) * 0.06;
+  } else if (taxableIncome <= 2155350) {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + 4300 * 0.0525 + 133650 * 0.055 + 161650 * 0.06 + (taxableIncome - 323200) * 0.0685;
+  } else if (taxableIncome <= 5000000) {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + 4300 * 0.0525 + 133650 * 0.055 + 161650 * 0.06 + 1832150 * 0.0685 + (taxableIncome - 2155350) * 0.0965;
+  } else {
+    stateTax = 17150 * 0.04 + 6450 * 0.045 + 4300 * 0.0525 + 133650 * 0.055 + 161650 * 0.06 + 1832150 * 0.0685 + 2844650 * 0.0965 + (taxableIncome - 5000000) * 0.109;
+  }
+
+  return stateTax;
+}
+
+/**
+ * Calculate Federal Tax (2024)
+ */
+function calculateFederalTax(taxableIncome: number): number {
   const standardDeduction = 29200; // 2024 married filing jointly
   const federalTaxableIncome = Math.max(0, taxableIncome - standardDeduction);
 
   if (federalTaxableIncome <= 22000) {
-    federalTax = federalTaxableIncome * 0.10;
+    return federalTaxableIncome * 0.10;
   } else if (federalTaxableIncome <= 89075) {
-    federalTax = 22000 * 0.10 + (federalTaxableIncome - 22000) * 0.12;
+    return 22000 * 0.10 + (federalTaxableIncome - 22000) * 0.12;
   } else if (federalTaxableIncome <= 190750) {
-    federalTax = 22000 * 0.10 + 67075 * 0.12 + (federalTaxableIncome - 89075) * 0.22;
+    return 22000 * 0.10 + 67075 * 0.12 + (federalTaxableIncome - 89075) * 0.22;
   } else if (federalTaxableIncome <= 364200) {
-    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + (federalTaxableIncome - 190750) * 0.24;
+    return 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + (federalTaxableIncome - 190750) * 0.24;
   } else if (federalTaxableIncome <= 462500) {
-    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + (federalTaxableIncome - 364200) * 0.32;
+    return 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + (federalTaxableIncome - 364200) * 0.32;
   } else if (federalTaxableIncome <= 693750) {
-    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + (federalTaxableIncome - 462500) * 0.35;
+    return 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + (federalTaxableIncome - 462500) * 0.35;
   } else {
-    federalTax = 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + 231250 * 0.35 + (federalTaxableIncome - 693750) * 0.37;
+    return 22000 * 0.10 + 67075 * 0.12 + 101675 * 0.22 + 173450 * 0.24 + 98300 * 0.32 + 231250 * 0.35 + (federalTaxableIncome - 693750) * 0.37;
   }
+}
 
-  const totalTax = stateTax + federalTax;
-  const effectiveRate = taxableIncome > 0 ? (totalTax / taxableIncome) * 100 : 0;
-
+/**
+ * Legacy function - keeping for backward compatibility
+ */
+export function calculateHawaiiTax(taxableIncome: number): { stateTax: number; federalTax: number; totalTax: number; effectiveRate: number } {
+  const result = calculateStateTax(taxableIncome, 'Hawaii');
   return {
-    stateTax,
-    federalTax,
-    totalTax,
-    effectiveRate,
+    stateTax: result.stateTax,
+    federalTax: result.federalTax,
+    totalTax: result.totalTax,
+    effectiveRate: result.effectiveRate,
   };
 }
 
