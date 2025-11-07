@@ -423,6 +423,14 @@ export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
     metrics.collegePlanning = calculateCollegePlanning(data);
   }
 
+  // Run Monte Carlo simulation for retirement
+  if (data.goals?.retirementAge) {
+    metrics.monteCarloSimulation = runMonteCarloSimulation(data, metrics);
+  }
+
+  // Generate tax optimization recommendations
+  metrics.taxOptimization = generateTaxOptimization(data, metrics);
+
   return metrics;
 }
 
@@ -862,7 +870,13 @@ function calculateMonthlyPaymentForGoal(
   monthsRemaining: number,
   annualReturnRate: number = 0.05
 ): number {
-  if (monthsRemaining <= 0) return targetAmount - currentAmount;
+  // Input validation
+  if (currentAmount < 0 || targetAmount < 0 || monthsRemaining < 0) {
+    console.warn('Invalid inputs to calculateMonthlyPaymentForGoal:', { currentAmount, targetAmount, monthsRemaining });
+    return 0;
+  }
+
+  if (monthsRemaining <= 0) return Math.max(0, targetAmount - currentAmount);
   if (targetAmount <= currentAmount) return 0;
 
   const gap = targetAmount - currentAmount;
@@ -920,6 +934,23 @@ function estimateSocialSecurityBenefit(annualIncome: number, currentAge: number)
   // Cap at maximum benefit (2024 is ~$3,822/month at FRA)
   monthlyBenefit = Math.min(monthlyBenefit, 3822);
 
+  // Adjust for early/late claiming
+  // Early claiming (62-66): ~7% reduction per year before FRA
+  // Late claiming (67-70): ~8% increase per year after FRA
+  const claimingAge = fullRetirementAge; // Default to FRA
+  const yearsDiff = claimingAge - fullRetirementAge;
+
+  let adjustmentFactor = 1.0;
+  if (yearsDiff < 0) {
+    // Early claiming reduction (~30% at age 62 vs 67)
+    adjustmentFactor = 1 + (yearsDiff * 0.07);
+  } else if (yearsDiff > 0) {
+    // Late claiming increase (~24% at age 70 vs 67)
+    adjustmentFactor = 1 + (yearsDiff * 0.08);
+  }
+
+  monthlyBenefit = monthlyBenefit * adjustmentFactor;
+
   return {
     monthlyBenefit: Math.round(monthlyBenefit),
     annualBenefit: Math.round(monthlyBenefit * 12),
@@ -939,8 +970,11 @@ function calculateEnhancedRetirement(data: ClientData, metrics: FinancialMetrics
   const inflationRate = data.assumptions?.inflationRate || 0.03;
   const returnRate = data.assumptions?.investmentReturnRate || 0.07;
 
-  // Current retirement savings
-  const retirementSavings = data.retirement401k + data.retirementIRA + data.brokerage;
+  // Current retirement savings (include brokerage if marked as retirement)
+  let retirementSavings = data.retirement401k + data.retirementIRA;
+  if (data.brokerageIsRetirement) {
+    retirementSavings += data.brokerage;
+  }
 
   // Desired annual retirement income (today's dollars)
   const desiredIncomeToday = data.goals?.retirementIncome || metrics.totalIncome * 0.8;
@@ -967,7 +1001,16 @@ function calculateEnhancedRetirement(data: ClientData, metrics: FinancialMetrics
   const savingsNeededAtRetirement = incomeNeededFromSavings * 25;
 
   // Project current savings with growth
-  const projectedSavings = retirementSavings * Math.pow(1 + returnRate, yearsToRetirement);
+  let projectedSavings = retirementSavings * Math.pow(1 + returnRate, yearsToRetirement);
+
+  // Add future value of ongoing monthly contributions
+  const monthlyContribution = data.monthlyRetirementContribution || 0;
+  if (monthlyContribution > 0 && yearsToRetirement > 0) {
+    const monthlyRate = returnRate / 12;
+    const monthsToRetirement = yearsToRetirement * 12;
+    const contributionsFV = monthlyContribution * (((Math.pow(1 + monthlyRate, monthsToRetirement) - 1) / monthlyRate));
+    projectedSavings += contributionsFV;
+  }
 
   // Calculate gap and monthly savings needed
   const gap = Math.max(0, savingsNeededAtRetirement - projectedSavings);
@@ -1016,13 +1059,29 @@ function calculatePortfolioAnalysis(data: ClientData) {
   // Based on stock allocation primarily
   const riskScore = Math.round(stocksPercent);
 
-  // Expected return calculation (simplified)
-  // Stocks: 10% historical, Bonds: 5%, Cash: 2%, Other: 7%
-  const expectedReturn =
-    (stocksPercent / 100) * 10 +
-    (bondsPercent / 100) * 5 +
-    (cashPercent / 100) * 2 +
-    (otherPercent / 100) * 7;
+  // Expected return calculation (conservative estimates)
+  // Stocks: 8% (more conservative than 10% historical), Bonds: 4.5%, Cash: 2%, Other: 6%
+  let expectedReturn: number;
+
+  // Normalize allocation if not exactly 100%
+  if (Math.abs(totalAllocation - 100) > 0.1) {
+    const stocksNorm = (stocksPercent / totalAllocation) * 100;
+    const bondsNorm = (bondsPercent / totalAllocation) * 100;
+    const cashNorm = (cashPercent / totalAllocation) * 100;
+    const otherNorm = (otherPercent / totalAllocation) * 100;
+
+    expectedReturn =
+      (stocksNorm / 100) * 8 +
+      (bondsNorm / 100) * 4.5 +
+      (cashNorm / 100) * 2 +
+      (otherNorm / 100) * 6;
+  } else {
+    expectedReturn =
+      (stocksPercent / 100) * 8 +
+      (bondsPercent / 100) * 4.5 +
+      (cashPercent / 100) * 2 +
+      (otherPercent / 100) * 6;
+  }
 
   // Determine recommended allocation based on age and risk tolerance
   let targetAllocation = '';
@@ -1101,9 +1160,22 @@ function calculateDebtPayoffAnalysis(data: ClientData, monthlySurplus: number) {
   // Calculate total minimum payment
   const totalMinPayment = allDebts.reduce((sum, debt) => sum + debt.minPayment, 0);
 
-  // Assume extra payment of 10% of surplus or $100, whichever is larger
-  const extraPayment = Math.max(100, monthlySurplus * 0.1);
+  // Only add extra payment if there's positive surplus
+  const extraPayment = monthlySurplus > 0 ? Math.max(100, monthlySurplus * 0.1) : 0;
   const totalPayment = totalMinPayment + extraPayment;
+
+  // If payment is insufficient to cover minimums, return warning
+  if (totalPayment < totalMinPayment * 0.95) {
+    return {
+      totalInterestAvalanche: 999999,
+      totalInterestSnowball: 999999,
+      savingsFromAvalanche: 0,
+      monthsToPayoffAvalanche: 360,
+      monthsToPayoffSnowball: 360,
+      recommendedMethod: 'avalanche' as const,
+      warning: 'Monthly payment insufficient to cover minimum payments. Debt will continue growing.',
+    } as any;
+  }
 
   // Avalanche method: Pay off highest APR first
   const avalancheDebts = [...allDebts].sort((a, b) => b.apr - a.apr);
@@ -1172,23 +1244,35 @@ function simulateDebtPayoff(
 function calculateCollegePlanning(data: ClientData) {
   if (!data.dependents || data.dependents === 0) return undefined;
 
-  // Assume youngest child is newborn for estimation
-  // (In real implementation, would ask for children's ages)
-  const yearsUntilCollege = 18;
+  // Get children ages or assume newborn
+  const childrenAges = data.childrenAges && data.childrenAges.length > 0
+    ? data.childrenAges
+    : Array(data.dependents).fill(0);
 
   // Average 4-year college cost in 2024: ~$100,000 (public), ~$200,000 (private)
   // Use middle estimate of $150,000
   const currentCollegeCost = 150000;
-
-  // College inflation rate: ~5% annually
   const collegeInflationRate = 0.05;
-  const estimatedTotalCost = currentCollegeCost * Math.pow(1 + collegeInflationRate, yearsUntilCollege);
 
-  // Current education savings (estimate 30% of brokerage + any education goal)
-  const currentSavings = data.goals?.educationSavings || (data.brokerage * 0.3);
+  // Calculate cost for each child based on their age
+  const collegeCosts = childrenAges.map(age => {
+    const yearsUntilCollege = Math.max(0, 18 - age);
+    return currentCollegeCost * Math.pow(1 + collegeInflationRate, yearsUntilCollege);
+  });
+
+  const estimatedTotalCost = collegeCosts.reduce((sum, cost) => sum + cost, 0);
+
+  // Get youngest child's age for timeline calculation
+  const youngestAge = Math.min(...childrenAges);
+  const yearsUntilCollege = Math.max(0, 18 - youngestAge);
+
+  // Current education savings (dedicated 529 or education goal)
+  const currentSavings = data.collegeSavings529
+    || data.goals?.educationSavings
+    || 0;
 
   // Calculate monthly savings needed
-  const monthsUntilCollege = yearsUntilCollege * 12;
+  const monthsUntilCollege = Math.max(1, yearsUntilCollege * 12);
   const monthlySavingsNeeded = calculateMonthlyPaymentForGoal(
     currentSavings,
     estimatedTotalCost,
@@ -1207,6 +1291,178 @@ function calculateCollegePlanning(data: ClientData) {
     currentSavings,
     monthlySavingsNeeded,
     projectedShortfall,
+  };
+}
+
+/**
+ * Run Monte Carlo simulation for retirement planning
+ */
+function runMonteCarloSimulation(data: ClientData, metrics: FinancialMetrics): NonNullable<FinancialMetrics['monteCarloSimulation']> {
+  const simulations = 1000;
+  const yearsToRetirement = data.goals?.retirementAge ? Math.max(0, data.goals.retirementAge - data.age) : 30;
+  const yearsInRetirement = 30; // Assume 30 years in retirement
+  const totalYears = yearsToRetirement + yearsInRetirement;
+
+  let retirementSavings = data.retirement401k + data.retirementIRA;
+  if (data.brokerageIsRetirement) {
+    retirementSavings += data.brokerage;
+  }
+
+  const monthlyContribution = data.monthlyRetirementContribution || 0;
+  const targetRetirementIncome = data.goals?.retirementIncome || metrics.totalIncome * 0.8;
+  const inflationRate = data.assumptions?.inflationRate || 0.03;
+  const baseReturn = data.assumptions?.investmentReturnRate || 0.07;
+
+  const results: number[] = [];
+
+  for (let sim = 0; sim < simulations; sim++) {
+    let balance = retirementSavings;
+
+    // Accumulation phase
+    for (let year = 0; year < yearsToRetirement; year++) {
+      // Variable returns using normal distribution approximation
+      // Mean = baseReturn, StdDev = 15% (typical stock market volatility)
+      const randomReturn = baseReturn + (Math.random() - 0.5) * 0.3;
+      balance = balance * (1 + randomReturn);
+      balance += monthlyContribution * 12;
+    }
+
+    // Distribution phase
+    for (let year = 0; year < yearsInRetirement; year++) {
+      const randomReturn = baseReturn + (Math.random() - 0.5) * 0.3;
+      balance = balance * (1 + randomReturn);
+
+      // Withdraw inflation-adjusted income
+      const withdrawal = targetRetirementIncome * Math.pow(1 + inflationRate, year);
+      balance -= withdrawal;
+
+      // Check if ran out of money
+      if (balance < 0) {
+        balance = 0;
+        break;
+      }
+    }
+
+    results.push(balance);
+  }
+
+  // Sort results for percentile calculation
+  results.sort((a, b) => a - b);
+
+  const successCount = results.filter(r => r > 0).length;
+  const successRate = (successCount / simulations) * 100;
+
+  return {
+    successRate: Math.round(successRate * 10) / 10,
+    medianNetWorth: results[Math.floor(simulations / 2)],
+    percentile10: results[Math.floor(simulations * 0.1)],
+    percentile90: results[Math.floor(simulations * 0.9)],
+    yearsSimulated: totalYears,
+    simulationsRun: simulations,
+  };
+}
+
+/**
+ * Generate tax optimization recommendations
+ */
+function generateTaxOptimization(data: ClientData, metrics: FinancialMetrics): NonNullable<FinancialMetrics['taxOptimization']> {
+  const totalIncome = metrics.totalIncome;
+  const filingStatus = data.filingStatus || 'married-joint';
+
+  // Calculate current tax bill
+  const stateTaxResult = data.state
+    ? calculateStateTax(totalIncome, data.state)
+    : { stateTax: 0, federalTax: calculateFederalTax(totalIncome), totalTax: calculateFederalTax(totalIncome), effectiveRate: 0, stateName: 'N/A' };
+
+  const currentTaxBill = stateTaxResult.totalTax;
+
+  const recommendations: Array<{
+    strategy: string;
+    estimatedSavings: number;
+    difficulty: 'easy' | 'moderate' | 'complex';
+    description: string;
+  }> = [];
+
+  // 1. Max out 401(k) contributions
+  const current401k = (data.monthlyRetirementContribution || 0) * 12;
+  const max401k = 23000; // 2024 limit
+  if (current401k < max401k) {
+    const additionalContribution = max401k - current401k;
+    const taxSavings = additionalContribution * (stateTaxResult.effectiveRate / 100);
+    recommendations.push({
+      strategy: 'Maximize 401(k) contributions',
+      estimatedSavings: taxSavings,
+      difficulty: 'easy',
+      description: `Increase 401(k) to $${max401k.toLocaleString()}/year (currently $${current401k.toLocaleString()}). Saves ${stateTaxResult.effectiveRate.toFixed(1)}% in taxes.`,
+    });
+  }
+
+  // 2. HSA contributions
+  if (totalIncome > 60000) {
+    const hsaMax = filingStatus === 'married-joint' ? 8300 : 4150; // 2024 family limit
+    const hsaTaxSavings = hsaMax * (stateTaxResult.effectiveRate / 100);
+    recommendations.push({
+      strategy: 'Contribute to HSA',
+      estimatedSavings: hsaTaxSavings,
+      difficulty: 'easy',
+      description: `Max out HSA contributions ($${hsaMax.toLocaleString()}/year). Triple tax advantage: deductible, grows tax-free, tax-free withdrawals for medical.`,
+    });
+  }
+
+  // 3. Tax-loss harvesting for brokerage
+  if (data.brokerage > 50000) {
+    const estimatedLosses = data.brokerage * 0.03; // Assume can harvest 3% losses
+    const taxSavings = Math.min(3000, estimatedLosses) * (stateTaxResult.effectiveRate / 100);
+    recommendations.push({
+      strategy: 'Tax-loss harvesting',
+      estimatedSavings: taxSavings,
+      difficulty: 'moderate',
+      description: 'Harvest investment losses to offset gains. Can deduct up to $3,000 in net losses against ordinary income annually.',
+    });
+  }
+
+  // 4. Backdoor Roth IRA
+  if (totalIncome > 230000 && filingStatus === 'married-joint') {
+    recommendations.push({
+      strategy: 'Backdoor Roth IRA',
+      estimatedSavings: 0, // No immediate savings but long-term benefit
+      difficulty: 'moderate',
+      description: 'Convert traditional IRA to Roth via backdoor method. Enables tax-free growth despite income limits.',
+    });
+  }
+
+  // 5. Donor-advised fund for charitable giving
+  if (totalIncome > 150000) {
+    const charityAmount = totalIncome * 0.05; // Assume 5% charitable giving
+    const taxSavings = charityAmount * (stateTaxResult.effectiveRate / 100);
+    recommendations.push({
+      strategy: 'Donor-Advised Fund',
+      estimatedSavings: taxSavings,
+      difficulty: 'moderate',
+      description: 'Bunch charitable contributions into one year for larger deduction, then distribute over time.',
+    });
+  }
+
+  // 6. 529 college savings (state tax deduction)
+  if (data.dependents > 0 && data.state && ['California', 'New York'].includes(data.state)) {
+    const contribution529 = 10000; // Assume $10k contribution
+    const stateTaxRate = data.state === 'California' ? 0.093 : 0.0685;
+    const taxSavings = contribution529 * stateTaxRate;
+    recommendations.push({
+      strategy: '529 College Savings Plan',
+      estimatedSavings: taxSavings,
+      difficulty: 'easy',
+      description: `Contribute to 529 plan for state tax deduction (${data.state} offers deduction). Tax-free growth for education.`,
+    });
+  }
+
+  const totalPotentialSavings = recommendations.reduce((sum, rec) => sum + rec.estimatedSavings, 0);
+
+  return {
+    currentTaxBill,
+    optimizedTaxBill: currentTaxBill - totalPotentialSavings,
+    potentialSavings: totalPotentialSavings,
+    recommendations,
   };
 }
 

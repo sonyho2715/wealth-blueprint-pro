@@ -10,10 +10,13 @@ export interface ClientData {
   spouseName?: string;
   spouseAge?: number;
   state?: 'Hawaii' | 'California' | 'Nevada' | 'Texas' | 'Florida' | 'New York';
+  filingStatus?: 'single' | 'married-joint' | 'married-separate' | 'head-of-household';
+  childrenAges?: number[]; // Ages of children (for college planning)
 
   // Income
   income: number;
   spouseIncome?: number;
+  monthlyRetirementContribution?: number; // Monthly 401(k)/IRA contributions
 
   // Assets
   checking: number;
@@ -21,6 +24,8 @@ export interface ClientData {
   retirement401k: number;
   retirementIRA: number;
   brokerage: number;
+  brokerageIsRetirement?: boolean; // If true, include brokerage in retirement projections
+  collegeSavings529?: number; // Dedicated 529 college savings plan balance
   homeValue: number;
   otherAssets: number;
   lifeInsuranceCoverage: number;
@@ -201,6 +206,29 @@ export interface FinancialMetrics {
     impact: string;
     deadline?: string;
   }>;
+
+  // Monte Carlo Simulation Results
+  monteCarloSimulation?: {
+    successRate: number; // % of simulations where goals are met
+    medianNetWorth: number; // Median outcome
+    percentile10: number; // 10th percentile (worst case)
+    percentile90: number; // 90th percentile (best case)
+    yearsSimulated: number;
+    simulationsRun: number;
+  };
+
+  // Tax Optimization Recommendations
+  taxOptimization?: {
+    currentTaxBill: number;
+    optimizedTaxBill: number;
+    potentialSavings: number;
+    recommendations: Array<{
+      strategy: string;
+      estimatedSavings: number;
+      difficulty: 'easy' | 'moderate' | 'complex';
+      description: string;
+    }>;
+  };
 }
 
 export interface RiskAssessment {
