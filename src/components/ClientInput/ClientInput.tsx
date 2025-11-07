@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import type { ClientData } from '../../types/financial.types';
-import { Save, Upload, Trash2, Sparkles, TrendingUp, MapPin, Zap } from 'lucide-react';
+import { Save, Upload, Trash2, Sparkles, TrendingUp, MapPin, Zap, Target } from 'lucide-react';
 import OnboardingWizard from './OnboardingWizard';
 import { useToast } from '../../hooks/useToast';
 
@@ -43,11 +43,49 @@ export default function ClientInput() {
       hasDisabilityInsurance: false,
       hasUmbrellaPolicy: false,
       hasEstatePlan: false,
+      goals: {
+        retirementAge: 65,
+        retirementIncome: 0,
+        emergencyFundMonths: 6,
+        homeDownPayment: 0,
+        educationSavings: 0,
+        debtFreeDate: '',
+        netWorthTarget: 0,
+        annualSavingsTarget: 0,
+        majorPurchase: {
+          description: '',
+          amount: 0,
+          targetDate: '',
+        },
+      },
     }
   );
 
   const handleChange = (field: keyof ClientData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleGoalChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      goals: {
+        ...prev.goals,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleMajorPurchaseChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      goals: {
+        ...prev.goals,
+        majorPurchase: {
+          ...prev.goals?.majorPurchase,
+          [field]: value,
+        },
+      },
+    }));
   };
 
   const validateData = (data: ClientData): string | null => {
@@ -475,6 +513,169 @@ export default function ClientInput() {
                 <span className="text-gray-900 font-medium group-hover:text-blue-600 transition-colors">{item.label}</span>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Financial Goals */}
+        <div className="card bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <div className="w-2 h-8 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full"></div>
+            <Target className="w-6 h-6 text-purple-600" />
+            Financial Goals
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            Set your financial goals to track progress and stay motivated
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Retirement Age */}
+            <div>
+              <label className="label">🏖️ Desired Retirement Age</label>
+              <input
+                type="number"
+                value={formData.goals?.retirementAge || ''}
+                onChange={(e) => handleGoalChange('retirementAge', parseFloat(e.target.value) || 65)}
+                className="input"
+                placeholder="65"
+              />
+            </div>
+
+            {/* Retirement Income */}
+            <div>
+              <label className="label">💰 Annual Retirement Income Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={formData.goals?.retirementIncome || ''}
+                  onChange={(e) => handleGoalChange('retirementIncome', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="80,000"
+                />
+              </div>
+            </div>
+
+            {/* Emergency Fund */}
+            <div>
+              <label className="label">🚨 Emergency Fund Goal (Months)</label>
+              <input
+                type="number"
+                value={formData.goals?.emergencyFundMonths || ''}
+                onChange={(e) => handleGoalChange('emergencyFundMonths', parseFloat(e.target.value) || 6)}
+                className="input"
+                placeholder="6"
+              />
+            </div>
+
+            {/* Home Down Payment */}
+            <div>
+              <label className="label">🏠 Home Down Payment Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={formData.goals?.homeDownPayment || ''}
+                  onChange={(e) => handleGoalChange('homeDownPayment', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="100,000"
+                />
+              </div>
+            </div>
+
+            {/* Education Savings */}
+            <div>
+              <label className="label">🎓 Education Savings Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={formData.goals?.educationSavings || ''}
+                  onChange={(e) => handleGoalChange('educationSavings', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="50,000"
+                />
+              </div>
+            </div>
+
+            {/* Net Worth Target */}
+            <div>
+              <label className="label">📈 Net Worth Target</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={formData.goals?.netWorthTarget || ''}
+                  onChange={(e) => handleGoalChange('netWorthTarget', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="1,000,000"
+                />
+              </div>
+            </div>
+
+            {/* Annual Savings Target */}
+            <div>
+              <label className="label">💵 Annual Savings Target</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={formData.goals?.annualSavingsTarget || ''}
+                  onChange={(e) => handleGoalChange('annualSavingsTarget', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="25,000"
+                />
+              </div>
+            </div>
+
+            {/* Debt Free Date */}
+            <div>
+              <label className="label">🎯 Target Debt-Free Date</label>
+              <input
+                type="date"
+                value={formData.goals?.debtFreeDate || ''}
+                onChange={(e) => handleGoalChange('debtFreeDate', e.target.value)}
+                className="input"
+              />
+            </div>
+          </div>
+
+          {/* Major Purchase Section */}
+          <div className="border-t-2 border-purple-300 mt-6 pt-6">
+            <h4 className="text-md font-bold text-gray-900 mb-4">🎁 Major Purchase Goal (Optional)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Description</label>
+                <input
+                  type="text"
+                  value={formData.goals?.majorPurchase?.description || ''}
+                  onChange={(e) => handleMajorPurchaseChange('description', e.target.value)}
+                  className="input"
+                  placeholder="Vacation, Car, etc."
+                />
+              </div>
+              <div>
+                <label className="label">Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                  <input
+                    type="number"
+                    value={formData.goals?.majorPurchase?.amount || ''}
+                    onChange={(e) => handleMajorPurchaseChange('amount', parseFloat(e.target.value) || 0)}
+                    className="input pl-8"
+                    placeholder="25,000"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label">Target Date</label>
+                <input
+                  type="date"
+                  value={formData.goals?.majorPurchase?.targetDate || ''}
+                  onChange={(e) => handleMajorPurchaseChange('targetDate', e.target.value)}
+                  className="input"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
