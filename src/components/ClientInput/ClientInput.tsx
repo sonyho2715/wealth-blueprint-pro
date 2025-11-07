@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import type { ClientData } from '../../types/financial.types';
-import { Save, Upload, Trash2, Sparkles, TrendingUp } from 'lucide-react';
+import { Save, Upload, Trash2, Sparkles, TrendingUp, MapPin, Zap } from 'lucide-react';
+import OnboardingWizard from './OnboardingWizard';
+import { useToast } from '../../hooks/useToast';
 
 export default function ClientInput() {
   const { currentClient, setClientData, loadSampleData, profiles, saveProfile, loadProfile, deleteProfile } =
     useClientStore();
+  const [useWizard, setUseWizard] = useState(true);
+  const { success, error, warning, ToastContainer } = useToast();
 
   const [formData, setFormData] = useState<ClientData>(
     currentClient || {
       name: '',
       age: 35,
       dependents: 0,
+      state: 'Hawaii',
       income: 0,
       checking: 0,
       savings: 0,
@@ -45,34 +50,161 @@ export default function ClientInput() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const validateData = (data: ClientData): string | null => {
+    // Name validation
+    if (!data.name || data.name.trim() === '') {
+      return 'Client name is required to generate personalized analysis';
+    }
+
+    // Age validation with professional messaging
+    if (data.age < 18) {
+      return 'Client must be at least 18 years old for insurance and financial planning purposes';
+    }
+    if (data.age > 100) {
+      return 'Please verify age entry - for clients over 100, please contact us directly for specialized planning';
+    }
+
+    // Income validation
+    if (data.income < 0 || (data.spouseIncome && data.spouseIncome < 0)) {
+      return 'Income values cannot be negative';
+    }
+    if (data.income === 0 && (data.spouseIncome || 0) === 0) {
+      warning('No household income entered - insurance and retirement projections will be limited');
+    }
+
+    // Asset validation - check for negative values
+    if (data.checking < 0 || data.savings < 0 || data.retirement401k < 0 ||
+        data.retirementIRA < 0 || data.brokerage < 0 || data.homeValue < 0 || data.otherAssets < 0) {
+      return 'Asset values cannot be negative - please verify all entries';
+    }
+
+    // Liability validation
+    if (data.mortgage < 0 || data.studentLoans < 0 || data.carLoans < 0 ||
+        data.creditCards < 0 || data.otherDebts < 0) {
+      return 'Debt amounts cannot be negative - please verify all entries';
+    }
+
+    // Smart logical consistency warnings (non-blocking)
+    if (data.homeValue > 0 && data.homeValue < data.mortgage) {
+      warning(`Home equity is negative: Mortgage ($${data.mortgage.toLocaleString()}) exceeds home value ($${data.homeValue.toLocaleString()}). This is common in declining markets but impacts net worth.`);
+    }
+
+    if (data.homeValue > 500000 && data.mortgage === 0 && data.age < 45) {
+      success(`Excellent! Home owned free and clear at age ${data.age} - significant financial milestone achieved.`);
+    }
+
+    const totalAssets = data.checking + data.savings + data.retirement401k + data.retirementIRA +
+                        data.brokerage + data.homeValue + data.otherAssets;
+    const totalLiabilities = data.mortgage + data.studentLoans + data.carLoans + data.creditCards + data.otherDebts;
+
+    if (totalAssets === 0 && totalLiabilities > 0) {
+      return 'Financial data inconsistency: Debts exist but no assets reported. Please verify all account balances.';
+    }
+
+    // Monthly expenses validation
+    const totalMonthlyExpenses = data.monthlyHousing + data.monthlyTransportation + data.monthlyFood +
+                                  data.monthlyUtilities + data.monthlyInsurance + data.monthlyEntertainment + data.monthlyOther;
+    const monthlyIncome = (data.income + (data.spouseIncome || 0)) / 12;
+
+    if (totalMonthlyExpenses > monthlyIncome * 1.5 && monthlyIncome > 0) {
+      warning(`Monthly expenses ($${totalMonthlyExpenses.toLocaleString()}) significantly exceed monthly income ($${monthlyIncome.toLocaleString()}). Budget adjustment may be needed.`);
+    }
+
+    if (totalMonthlyExpenses === 0 && monthlyIncome > 0) {
+      warning('No monthly expenses entered - analysis will use conservative estimates.');
+    }
+
+    // Insurance coverage warnings for appropriate income levels
+    const householdIncome = data.income + (data.spouseIncome || 0);
+
+    if (householdIncome > 50000 && data.lifeInsuranceCoverage === 0) {
+      warning(`Critical: No life insurance coverage with $${householdIncome.toLocaleString()} household income. Recommended: $${(householdIncome * 10).toLocaleString()} coverage.`);
+    }
+
+    if (!data.hasDisabilityInsurance && householdIncome > 40000 && data.age < 65) {
+      warning(`Important: No disability insurance to protect income earning ability. This is your most valuable asset.`);
+    }
+
+    if (!data.hasEstatePlan && (totalAssets > 200000 || data.dependents > 0)) {
+      warning('Consider estate planning: With significant assets or dependents, wills and trusts are important.');
+    }
+
+    return null;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validateData(formData);
+    if (validationError) {
+      error(validationError);
+      return;
+    }
     setClientData(formData);
-    alert('✅ Analysis generated successfully! View other tabs for insights.');
+    success('Analysis generated successfully! View Dashboard for insights.');
   };
 
   const handleLoadSample = () => {
     loadSampleData();
     if (useClientStore.getState().currentClient) {
       setFormData(useClientStore.getState().currentClient!);
+      success('Sample data loaded successfully!');
     }
   };
 
   const handleSaveProfile = () => {
     const profileName = prompt('Enter profile name:');
     if (profileName) {
+      const validationError = validateData(formData);
+      if (validationError) {
+        error(validationError);
+        return;
+      }
       setClientData(formData);
       saveProfile(profileName);
-      alert(`✅ Profile "${profileName}" saved!`);
+      success(`Profile "${profileName}" saved successfully!`);
     }
   };
 
+  const handleLoadProfile = (id: string) => {
+    loadProfile(id);
+    const loadedClient = useClientStore.getState().currentClient;
+    if (loadedClient) {
+      setFormData(loadedClient);
+      success('Profile loaded successfully!');
+    }
+  };
+
+  const handleDeleteProfile = (id: string, name: string) => {
+    if (confirm(`Delete profile "${name}"?`)) {
+      deleteProfile(id);
+      success('Profile deleted successfully!');
+    }
+  };
+
+  // If wizard mode is enabled and no current client, show wizard
+  if (useWizard && !currentClient) {
+    return (
+      <div className="space-y-4">
+        <div className="text-right">
+          <button
+            onClick={() => setUseWizard(false)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+          >
+            Switch to Advanced Form
+          </button>
+        </div>
+        <OnboardingWizard />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-slide-up">
+      <ToastContainer />
       {/* Header Section */}
       <div className="card-gradient">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <h2 className="text-3xl font-bold gradient-text flex items-center gap-2">
               <Sparkles className="w-8 h-8" />
               Client Information
@@ -81,7 +213,34 @@ export default function ClientInput() {
               Enter comprehensive financial data to generate powerful insights
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            {/* State Selector */}
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-gray-600" />
+              <select
+                value={formData.state || 'Hawaii'}
+                onChange={(e) => handleChange('state', e.target.value)}
+                className="px-4 py-2 border-2 border-gray-200 rounded-lg font-semibold text-gray-900 bg-white hover:border-blue-400 transition-colors"
+              >
+                <option value="Hawaii">Hawaii</option>
+                <option value="California">California</option>
+                <option value="Nevada">Nevada</option>
+                <option value="Texas">Texas</option>
+                <option value="Florida">Florida</option>
+                <option value="New York">New York</option>
+              </select>
+            </div>
+          </div>
           <div className="flex gap-3">
+            {!currentClient && (
+              <button
+                onClick={() => setUseWizard(true)}
+                className="btn btn-primary"
+              >
+                <Zap className="w-4 h-4" />
+                Use Guided Wizard
+              </button>
+            )}
             <button onClick={handleLoadSample} className="btn btn-secondary">
               <Upload className="w-4 h-4" />
               Load Sample
@@ -113,18 +272,13 @@ export default function ClientInput() {
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => {
-                        loadProfile(id);
-                        setFormData(useClientStore.getState().currentClient!);
-                      }}
+                      onClick={() => handleLoadProfile(id)}
                       className="text-blue-600 hover:text-blue-700 font-medium text-sm px-3 py-1 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
                     >
                       Load
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm('Delete this profile?')) deleteProfile(id);
-                      }}
+                      onClick={() => handleDeleteProfile(id, profile.name)}
                       className="text-red-600 hover:text-red-700 p-1 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />

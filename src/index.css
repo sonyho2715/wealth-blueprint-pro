@@ -136,3 +136,40 @@
 ::selection {
   @apply bg-blue-200 text-blue-900;
 }
+
+/* Toast slide-in animation */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Custom Range Input Styling */
+input[type="range"] {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full cursor-pointer shadow-lg;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-5 h-5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full cursor-pointer shadow-lg border-0;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  @apply w-full h-2 bg-gradient-to-r from-blue-200 to-purple-200 rounded-lg;
+}
+
+input[type="range"]::-moz-range-track {
+  @apply w-full h-2 bg-gradient-to-r from-blue-200 to-purple-200 rounded-lg;
+}

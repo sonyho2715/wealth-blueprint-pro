@@ -10,7 +10,9 @@ import PeerBenchmark from './PeerBenchmark';
 import TaxOptimization from './TaxOptimization';
 import BusinessOwnerDashboard from './BusinessOwnerDashboard';
 import LifePlanning from './LifePlanning';
-import Products from './Products';
+import CashFlowProjection from './CashFlowProjection';
+import EnhancedInsurance from './EnhancedInsurance';
+import AdvancedAnalytics from './AdvancedAnalytics';
 import {
   DollarSign,
   TrendingUp,
@@ -26,7 +28,8 @@ import {
   Receipt,
   Briefcase,
   Target,
-  Package,
+  Sparkles,
+  BarChart,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -53,8 +56,10 @@ export default function Dashboard() {
 
   const sections = [
     { id: 'overview', name: 'Overview', icon: <Activity className="w-4 h-4" /> },
+    { id: 'cashflow', name: 'Cash Flow', icon: <BarChart className="w-4 h-4" /> },
     { id: 'planning', name: 'Life Planning', icon: <Target className="w-4 h-4" /> },
-    { id: 'products', name: 'Products', icon: <Package className="w-4 h-4" /> },
+    { id: 'insurance', name: 'Insurance Quotes', icon: <Shield className="w-4 h-4" /> },
+    { id: 'analytics', name: 'Advanced Analytics', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'whatif', name: 'What-If', icon: <GitCompare className="w-4 h-4" /> },
     { id: 'retirement', name: 'Retirement', icon: <LineChart className="w-4 h-4" /> },
     { id: 'debt', name: 'Debt Payoff', icon: <CreditCard className="w-4 h-4" /> },
@@ -72,7 +77,7 @@ export default function Dashboard() {
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
+              className={`relative flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
                 activeSection === section.id
                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
                   : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600'
@@ -88,6 +93,47 @@ export default function Dashboard() {
       {/* Active Section Content */}
       {activeSection === 'overview' && (
         <div className="space-y-8">
+          {/* Critical Alerts - MOVED TO TOP */}
+          {currentMetrics.lifeInsuranceGap > 0 && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 animate-pulse-slow">
+              <div className="flex items-start gap-4">
+                <div className="bg-red-100 p-3 rounded-full">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-red-900 mb-2">
+                    ⚠️ CRITICAL: Life Insurance Protection Gap
+                  </h3>
+                  <p className="text-red-800 mb-3">
+                    You have a <strong>{formatCurrency(currentMetrics.lifeInsuranceGap)}</strong> gap in
+                    life insurance coverage. Your family would struggle financially if something
+                    happened to you.
+                  </p>
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <p className="text-red-600">Current Coverage:</p>
+                      <p className="font-bold text-red-900">
+                        {formatCurrency(currentClient.lifeInsuranceCoverage)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-red-600">Recommended Coverage:</p>
+                      <p className="font-bold text-red-900">
+                        {formatCurrency(currentMetrics.lifeInsuranceNeeded)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-red-600">Years of Income:</p>
+                      <p className="font-bold text-red-900">
+                        {(currentClient.lifeInsuranceCoverage / currentMetrics.totalIncome).toFixed(1)}x
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Financial Snapshot Section */}
           <LivingBalanceSheet />
 
@@ -176,47 +222,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Critical Alerts */}
-      {currentMetrics.lifeInsuranceGap > 0 && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 animate-pulse-slow">
-          <div className="flex items-start gap-4">
-            <div className="bg-red-100 p-3 rounded-full">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-red-900 mb-2">
-                CRITICAL: Life Insurance Protection Gap
-              </h3>
-              <p className="text-red-800 mb-3">
-                You have a <strong>{formatCurrency(currentMetrics.lifeInsuranceGap)}</strong> gap in
-                life insurance coverage. Your family would struggle financially if something
-                happened to you.
-              </p>
-              <div className="flex gap-4 text-sm">
-                <div>
-                  <p className="text-red-600">Current Coverage:</p>
-                  <p className="font-bold text-red-900">
-                    {formatCurrency(currentClient.lifeInsuranceCoverage)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-red-600">Recommended Coverage:</p>
-                  <p className="font-bold text-red-900">
-                    {formatCurrency(currentMetrics.lifeInsuranceNeeded)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-red-600">Years of Income:</p>
-                  <p className="font-bold text-red-900">
-                    {(currentClient.lifeInsuranceCoverage / currentMetrics.totalIncome).toFixed(1)}x
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Key Ratios */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
@@ -292,11 +297,17 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Cash Flow Projection */}
+      {activeSection === 'cashflow' && <CashFlowProjection />}
+
       {/* Life Planning */}
       {activeSection === 'planning' && <LifePlanning />}
 
-      {/* Products (Insurance) */}
-      {activeSection === 'products' && <Products />}
+      {/* Enhanced Insurance */}
+      {activeSection === 'insurance' && <EnhancedInsurance />}
+
+      {/* Advanced Analytics */}
+      {activeSection === 'analytics' && <AdvancedAnalytics />}
 
       {/* What-If Scenarios */}
       {activeSection === 'whatif' && <WhatIfScenarios />}

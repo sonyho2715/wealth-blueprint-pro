@@ -9,6 +9,7 @@ export interface ClientData {
   dependents: number;
   spouseName?: string;
   spouseAge?: number;
+  state?: 'Hawaii' | 'California' | 'Nevada' | 'Texas' | 'Florida' | 'New York';
 
   // Income
   income: number;

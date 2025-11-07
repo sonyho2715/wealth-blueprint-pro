@@ -63,31 +63,31 @@ export interface AgentConfig {
 }
 
 /**
- * DEFAULT CONFIGURATION - Sony Ho
- * Update these values to white-label for a new agent
+ * DEFAULT CONFIGURATION - SAMPLE PLATFORM
+ * Update these values to white-label for your agency
  */
 export const agentConfig: AgentConfig = {
   // Agent Information
-  agentName: "Sony Ho",
+  agentName: "Agent Name Here",
   agentTitle: "Professional Financial Consultant",
-  agentEmail: "mrsonyho@gmail.com",
-  agentPhone: "(808) 383-7520",
-  agentWebsite: "https://sonyho.com", // Update with real website
+  agentEmail: "agent@example.com",
+  agentPhone: "(555) 123-4567",
+  agentWebsite: "https://yourwebsite.com", // Update with your website
   agentLogo: undefined, // Path to logo image in /public folder
   agentPhoto: undefined, // Path to professional headshot in /public folder
   agentBio: "Helping families and business owners achieve financial freedom through comprehensive planning and strategic wealth management.",
 
   // Professional Credentials
   credentials: {
-    certifications: ["CFP®", "ChFC", "CLU"], // Update with actual certifications
-    licenses: ["Series 65", "Life & Health"], // Update with actual licenses
+    certifications: ["CFP®", "ChFC", "CLU"], // Update with your certifications
+    licenses: ["Series 65", "Life & Health"], // Update with your licenses
     yearsOfExperience: 15,
     clientsServed: 500,
     assetsUnderManagement: "$50M+",
   },
 
   // Company Information
-  companyName: "Sony Ho Financial Services",
+  companyName: "Your Financial Services",
   companyAddress: undefined,
 
   // Branding Colors
@@ -112,7 +112,7 @@ export const agentConfig: AgentConfig = {
 
   // Social Links
   socialLinks: {
-    linkedin: "https://linkedin.com/in/sonyho",
+    linkedin: "https://linkedin.com/in/yourusername",
     twitter: undefined,
     facebook: undefined,
   },

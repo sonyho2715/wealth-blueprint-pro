@@ -5,11 +5,9 @@ import Header from './components/shared/Header';
 import Navigation from './components/shared/Navigation';
 import Dashboard from './components/Dashboard/Dashboard';
 import ClientInput from './components/ClientInput/ClientInput';
-import Charts from './components/Charts/Charts';
 import RiskAssessment from './components/RiskAssessment/RiskAssessment';
-import Products from './components/Products/Products';
 
-type TabName = 'input' | 'dashboard' | 'charts' | 'risk' | 'products';
+type TabName = 'input' | 'dashboard' | 'risk';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabName>('input');
@@ -35,14 +33,12 @@ function App() {
         <div className="space-y-6">
           {activeTab === 'input' && <ClientInput />}
           {activeTab === 'dashboard' && hasData && <Dashboard />}
-          {activeTab === 'charts' && hasData && <Charts />}
           {activeTab === 'risk' && hasData && <RiskAssessment />}
-          {activeTab === 'products' && hasData && <Products />}
 
           {activeTab !== 'input' && !hasData && (
             <div className="card-highlight text-center py-16 animate-scale-in">
               <div className="max-w-md mx-auto">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-teal-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
                   <svg
                     className="w-10 h-10 text-white"
                     fill="none"

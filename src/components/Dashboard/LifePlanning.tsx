@@ -14,7 +14,8 @@ type State = 'Hawaii' | 'California' | 'Nevada' | 'Texas' | 'Florida' | 'New Yor
 export default function LifePlanning() {
   const { currentClient, currentMetrics } = useClientStore();
   const [activeTab, setActiveTab] = useState<'home' | 'business' | 'college'>('home');
-  const [selectedState, setSelectedState] = useState<State>('Hawaii');
+
+  const selectedState = (currentClient?.state || 'Hawaii') as State;
 
   // Home Buying
   const [homePrice, setHomePrice] = useState(650000);
@@ -39,8 +40,6 @@ export default function LifePlanning() {
 
   // Calculate taxes for selected state
   const taxInfo = calculateStateTax(currentMetrics.totalIncome, selectedState);
-
-  const states: State[] = ['Hawaii', 'California', 'Nevada', 'Texas', 'Florida', 'New York'];
 
   // Home buying calculations
   const downPaymentAmount = homePrice * (downPayment / 100);
@@ -85,20 +84,11 @@ export default function LifePlanning() {
             </p>
           </div>
 
-          {/* State Selector */}
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-gray-600" />
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value as State)}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg font-semibold text-gray-900 bg-white hover:border-blue-400 transition-colors"
-            >
-              {states.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
+          {/* State Display */}
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            <span className="font-semibold text-gray-900">{selectedState}</span>
+            <span className="text-xs text-gray-600">(Change in Client Input)</span>
           </div>
         </div>
 
