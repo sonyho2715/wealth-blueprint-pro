@@ -20,6 +20,9 @@ const ActionItems = lazy(() => import('./ActionItems'));
 const DebtPayoffCalculator = lazy(() => import('./DebtPayoffCalculator'));
 const CollegePlanning = lazy(() => import('./CollegePlanning'));
 const PortfolioAnalysis = lazy(() => import('./PortfolioAnalysis'));
+const BeneficiaryBreakdown = lazy(() => import('./BeneficiaryBreakdown'));
+const WithoutInsuranceCalculator = lazy(() => import('./WithoutInsuranceCalculator'));
+const ComparisonMode = lazy(() => import('./ComparisonMode'));
 import {
   DollarSign,
   TrendingUp,
@@ -173,6 +176,26 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Insurance Sales Conversion Components */}
+          {currentMetrics.lifeInsuranceGap > 0 && (
+            <>
+              {/* Beneficiary Breakdown */}
+              <Suspense fallback={<SectionLoader />}>
+                <BeneficiaryBreakdown />
+              </Suspense>
+
+              {/* Without Insurance Calculator */}
+              <Suspense fallback={<SectionLoader />}>
+                <WithoutInsuranceCalculator />
+              </Suspense>
+
+              {/* Coverage Comparison Mode */}
+              <Suspense fallback={<SectionLoader />}>
+                <ComparisonMode />
+              </Suspense>
+            </>
           )}
 
           {/* Financial Snapshot Section */}
