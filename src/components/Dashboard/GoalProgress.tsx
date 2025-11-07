@@ -25,46 +25,54 @@ export default function GoalProgress() {
     const goalsArray = [];
 
     if (currentClient.goals.retirementAge && currentMetrics.goalProgress.retirementReadiness !== undefined) {
+      const monthlySavings = currentMetrics.goalMonthlySavings?.retirementShortfall;
       goalsArray.push({
         icon: <TrendingUp className="w-6 h-6" />,
         title: 'Retirement Readiness',
         target: `Retire at ${currentClient.goals.retirementAge}`,
         current: `${currentMetrics.goalProgress.retirementReadiness.toFixed(1)}% Ready`,
         progress: currentMetrics.goalProgress.retirementReadiness,
+        monthlySavings,
         color: 'blue',
       });
     }
 
     if (currentClient.goals.emergencyFundMonths && currentMetrics.goalProgress.emergencyFund !== undefined) {
       const targetAmount = currentMetrics.totalMonthlyExpenses * currentClient.goals.emergencyFundMonths;
+      const monthlySavings = currentMetrics.goalMonthlySavings?.emergencyFund;
       goalsArray.push({
         icon: <PiggyBank className="w-6 h-6" />,
         title: 'Emergency Fund',
         target: `${currentClient.goals.emergencyFundMonths} months (${formatCurrency(targetAmount)})`,
         current: `${currentMetrics.goalProgress.emergencyFund.toFixed(1)}% Complete`,
         progress: currentMetrics.goalProgress.emergencyFund,
+        monthlySavings,
         color: 'green',
       });
     }
 
     if (currentClient.goals.homeDownPayment && currentMetrics.goalProgress.homeDownPayment !== undefined) {
+      const monthlySavings = currentMetrics.goalMonthlySavings?.homeDownPayment;
       goalsArray.push({
         icon: <Home className="w-6 h-6" />,
         title: 'Home Down Payment',
         target: formatCurrency(currentClient.goals.homeDownPayment),
         current: `${currentMetrics.goalProgress.homeDownPayment.toFixed(1)}% Saved`,
         progress: currentMetrics.goalProgress.homeDownPayment,
+        monthlySavings,
         color: 'purple',
       });
     }
 
     if (currentClient.goals.educationSavings && currentMetrics.goalProgress.educationSavings !== undefined) {
+      const monthlySavings = currentMetrics.goalMonthlySavings?.educationSavings;
       goalsArray.push({
         icon: <GraduationCap className="w-6 h-6" />,
         title: 'Education Savings',
         target: formatCurrency(currentClient.goals.educationSavings),
         current: `${currentMetrics.goalProgress.educationSavings.toFixed(1)}% Saved`,
         progress: currentMetrics.goalProgress.educationSavings,
+        monthlySavings,
         color: 'orange',
       });
     }
@@ -107,12 +115,14 @@ export default function GoalProgress() {
       const targetDate = currentClient.goals.majorPurchase.targetDate
         ? new Date(currentClient.goals.majorPurchase.targetDate).toLocaleDateString()
         : 'TBD';
+      const monthlySavings = currentMetrics.goalMonthlySavings?.majorPurchase;
       goalsArray.push({
         icon: <Gift className="w-6 h-6" />,
         title: currentClient.goals.majorPurchase.description,
         target: `${formatCurrency(currentClient.goals.majorPurchase.amount || 0)} by ${targetDate}`,
         current: `${currentMetrics.goalProgress.majorPurchaseProgress.toFixed(1)}% Saved`,
         progress: currentMetrics.goalProgress.majorPurchaseProgress,
+        monthlySavings,
         color: 'pink',
       });
     }
@@ -208,6 +218,14 @@ export default function GoalProgress() {
                     style={{ width: `${Math.min(100, goal.progress)}%` }}
                   />
                 </div>
+                {goal.monthlySavings && goal.monthlySavings > 0 && goal.progress < 100 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 font-medium">Monthly Savings Needed:</span>
+                      <span className="font-bold text-blue-600">{formatCurrency(goal.monthlySavings)}/mo</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -323,6 +323,106 @@ export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
     metrics.goalProgress = goalProgress;
   }
 
+  // Calculate enhanced retirement analysis
+  if (data.goals?.retirementAge) {
+    metrics.retirementAnalysis = calculateEnhancedRetirement(data, metrics);
+    // Update retirement readiness based on enhanced calculation
+    if (metrics.retirementAnalysis && metrics.goalProgress) {
+      const readiness = (metrics.retirementAnalysis.projectedSavingsAtRetirement / metrics.retirementAnalysis.savingsNeededAtRetirement) * 100;
+      metrics.goalProgress.retirementReadiness = Math.min(100, readiness);
+    }
+  }
+
+  // Calculate Social Security estimate
+  if (metrics.totalIncome > 0) {
+    metrics.socialSecurityEstimate = estimateSocialSecurityBenefit(metrics.totalIncome, data.age);
+  }
+
+  // Calculate monthly savings needed for goals
+  if (data.goals) {
+    const goalMonthlySavings: NonNullable<typeof metrics['goalMonthlySavings']> = {};
+    const returnRate = data.assumptions?.investmentReturnRate || 0.05;
+
+    // Emergency Fund
+    if (data.goals.emergencyFundMonths) {
+      const targetAmount = metrics.totalMonthlyExpenses * data.goals.emergencyFundMonths;
+      const currentAmount = data.checking + data.savings;
+      const monthsToGoal = 12; // Default 1 year to build emergency fund
+      goalMonthlySavings.emergencyFund = calculateMonthlyPaymentForGoal(
+        currentAmount,
+        targetAmount,
+        monthsToGoal,
+        0.02 // Low return for liquid savings
+      );
+    }
+
+    // Home Down Payment
+    if (data.goals.homeDownPayment && data.goals.homeDownPayment > 0) {
+      const currentAmount = data.checking + data.savings + data.brokerage;
+      const monthsToGoal = 36; // Default 3 years to save for down payment
+      goalMonthlySavings.homeDownPayment = calculateMonthlyPaymentForGoal(
+        currentAmount,
+        data.goals.homeDownPayment,
+        monthsToGoal,
+        returnRate
+      );
+    }
+
+    // Education Savings
+    if (data.goals.educationSavings && data.goals.educationSavings > 0) {
+      const currentAmount = data.brokerage * 0.3; // Estimate 30% of brokerage
+      const monthsToGoal = 120; // Default 10 years for education
+      goalMonthlySavings.educationSavings = calculateMonthlyPaymentForGoal(
+        currentAmount,
+        data.goals.educationSavings,
+        monthsToGoal,
+        returnRate
+      );
+    }
+
+    // Major Purchase
+    if (data.goals.majorPurchase?.amount && data.goals.majorPurchase.amount > 0) {
+      const currentAmount = data.checking + data.savings;
+      let monthsToGoal = 24; // Default 2 years
+
+      if (data.goals.majorPurchase.targetDate) {
+        const targetDate = new Date(data.goals.majorPurchase.targetDate);
+        const today = new Date();
+        monthsToGoal = Math.max(1, Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+      }
+
+      goalMonthlySavings.majorPurchase = calculateMonthlyPaymentForGoal(
+        currentAmount,
+        data.goals.majorPurchase.amount,
+        monthsToGoal,
+        0.03 // Conservative return for short-term goal
+      );
+    }
+
+    // Retirement Shortfall
+    if (metrics.retirementAnalysis && metrics.retirementAnalysis.gap > 0) {
+      goalMonthlySavings.retirementShortfall = metrics.retirementAnalysis.monthlySavingsNeeded;
+    }
+
+    metrics.goalMonthlySavings = goalMonthlySavings;
+  }
+
+  // Calculate portfolio analysis
+  if (data.portfolio) {
+    metrics.portfolioAnalysis = calculatePortfolioAnalysis(data);
+  }
+
+  // Calculate debt payoff analysis
+  if (data.detailedDebts) {
+    const monthlySurplus = metrics.totalIncome / 12 - metrics.totalMonthlyExpenses;
+    metrics.debtPayoffAnalysis = calculateDebtPayoffAnalysis(data, monthlySurplus);
+  }
+
+  // Calculate college planning
+  if (data.dependents && data.dependents > 0) {
+    metrics.collegePlanning = calculateCollegePlanning(data);
+  }
+
   return metrics;
 }
 
@@ -417,11 +517,20 @@ export function generateRiskAssessment(
     .filter((cat) => cat.status === 'critical')
     .map((cat) => cat.name);
 
-  return {
+  const riskAssessment: RiskAssessment = {
     categories,
     overallRiskScore,
     criticalGaps,
   };
+
+  // Generate action items based on risk assessment and metrics
+  const actionItems = generateActionItems(data, metrics, riskAssessment);
+  if (actionItems && actionItems.length > 0) {
+    // Add action items to metrics (will be added in calling function)
+    (metrics as any)._actionItemsToAdd = actionItems;
+  }
+
+  return riskAssessment;
 }
 
 function assessLifeInsurance(data: ClientData, metrics: FinancialMetrics): RiskCategory {
@@ -741,4 +850,454 @@ export function formatCurrency(amount: number): string {
  */
 export function formatPercentage(value: number, decimals: number = 1): string {
   return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Calculate monthly payment needed to reach a future value
+ * Uses future value of annuity formula: FV = PMT * [((1 + r)^n - 1) / r]
+ */
+function calculateMonthlyPaymentForGoal(
+  currentAmount: number,
+  targetAmount: number,
+  monthsRemaining: number,
+  annualReturnRate: number = 0.05
+): number {
+  if (monthsRemaining <= 0) return targetAmount - currentAmount;
+  if (targetAmount <= currentAmount) return 0;
+
+  const gap = targetAmount - currentAmount;
+  const monthlyRate = annualReturnRate / 12;
+
+  // If no growth assumed, simple division
+  if (monthlyRate === 0) {
+    return gap / monthsRemaining;
+  }
+
+  // Future value of current amount
+  const futureValueOfCurrent = currentAmount * Math.pow(1 + monthlyRate, monthsRemaining);
+  const remainingGap = targetAmount - futureValueOfCurrent;
+
+  if (remainingGap <= 0) return 0;
+
+  // Calculate monthly payment needed using FV annuity formula
+  const monthlyPayment = remainingGap / (((Math.pow(1 + monthlyRate, monthsRemaining) - 1) / monthlyRate));
+
+  return Math.max(0, monthlyPayment);
+}
+
+/**
+ * Estimate Social Security benefit using simplified PIA formula
+ * Based on average indexed monthly earnings (AIME)
+ */
+function estimateSocialSecurityBenefit(annualIncome: number, currentAge: number): {
+  monthlyBenefit: number;
+  annualBenefit: number;
+  fullRetirementAge: number;
+} {
+  // Determine Full Retirement Age (FRA) based on birth year
+  const birthYear = new Date().getFullYear() - currentAge;
+  let fullRetirementAge = 67;
+  if (birthYear < 1955) fullRetirementAge = 66;
+  else if (birthYear < 1960) fullRetirementAge = 66 + (birthYear - 1954) * 2 / 12;
+
+  // Simplified AIME calculation (assume current income is representative)
+  const monthlyEarnings = annualIncome / 12;
+
+  // 2024 bend points for PIA calculation
+  const bendPoint1 = 1174;
+  const bendPoint2 = 7078;
+
+  let monthlyBenefit = 0;
+
+  if (monthlyEarnings <= bendPoint1) {
+    monthlyBenefit = monthlyEarnings * 0.90;
+  } else if (monthlyEarnings <= bendPoint2) {
+    monthlyBenefit = (bendPoint1 * 0.90) + ((monthlyEarnings - bendPoint1) * 0.32);
+  } else {
+    monthlyBenefit = (bendPoint1 * 0.90) + ((bendPoint2 - bendPoint1) * 0.32) + ((monthlyEarnings - bendPoint2) * 0.15);
+  }
+
+  // Cap at maximum benefit (2024 is ~$3,822/month at FRA)
+  monthlyBenefit = Math.min(monthlyBenefit, 3822);
+
+  return {
+    monthlyBenefit: Math.round(monthlyBenefit),
+    annualBenefit: Math.round(monthlyBenefit * 12),
+    fullRetirementAge,
+  };
+}
+
+/**
+ * Enhanced retirement calculation with inflation adjustment
+ */
+function calculateEnhancedRetirement(data: ClientData, metrics: FinancialMetrics) {
+  const currentAge = data.age;
+  const retirementAge = data.goals?.retirementAge || 67;
+  const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+
+  // Get assumptions or use defaults
+  const inflationRate = data.assumptions?.inflationRate || 0.03;
+  const returnRate = data.assumptions?.investmentReturnRate || 0.07;
+
+  // Current retirement savings
+  const retirementSavings = data.retirement401k + data.retirementIRA + data.brokerage;
+
+  // Desired annual retirement income (today's dollars)
+  const desiredIncomeToday = data.goals?.retirementIncome || metrics.totalIncome * 0.8;
+
+  // Adjust for inflation to retirement date
+  const futureDesiredIncome = desiredIncomeToday * Math.pow(1 + inflationRate, yearsToRetirement);
+
+  // Estimate Social Security
+  let socialSecurityBenefit = 0;
+  if (data.assumptions?.estimatedMonthlySS) {
+    socialSecurityBenefit = data.assumptions.estimatedMonthlySS * 12;
+  } else {
+    const ssEstimate = estimateSocialSecurityBenefit(metrics.totalIncome, currentAge);
+    socialSecurityBenefit = ssEstimate.annualBenefit;
+  }
+
+  // Adjust SS for inflation to retirement
+  const futureSocialSecurity = socialSecurityBenefit * Math.pow(1 + inflationRate, yearsToRetirement);
+
+  // Income needed from savings (after Social Security)
+  const incomeNeededFromSavings = Math.max(0, futureDesiredIncome - futureSocialSecurity);
+
+  // 4% rule: Need 25x annual expenses from savings
+  const savingsNeededAtRetirement = incomeNeededFromSavings * 25;
+
+  // Project current savings with growth
+  const projectedSavings = retirementSavings * Math.pow(1 + returnRate, yearsToRetirement);
+
+  // Calculate gap and monthly savings needed
+  const gap = Math.max(0, savingsNeededAtRetirement - projectedSavings);
+  const monthsToRetirement = yearsToRetirement * 12;
+
+  let monthlySavingsNeeded = 0;
+  if (gap > 0 && monthsToRetirement > 0) {
+    monthlySavingsNeeded = calculateMonthlyPaymentForGoal(
+      retirementSavings,
+      savingsNeededAtRetirement,
+      monthsToRetirement,
+      returnRate
+    );
+  }
+
+  return {
+    projectedSavingsAtRetirement: projectedSavings,
+    savingsNeededAtRetirement,
+    gap,
+    monthlySavingsNeeded,
+    estimatedSocialSecurity: socialSecurityBenefit,
+    inflationAdjustedIncome: futureDesiredIncome,
+  };
+}
+
+/**
+ * Calculate portfolio risk score and allocation recommendations
+ */
+function calculatePortfolioAnalysis(data: ClientData) {
+  const portfolio = data.portfolio;
+  if (!portfolio) return undefined;
+
+  const age = data.age;
+  const stocksPercent = portfolio.stocksPercent || 0;
+  const bondsPercent = portfolio.bondsPercent || 0;
+  const cashPercent = portfolio.cashPercent || 0;
+  const otherPercent = portfolio.otherPercent || 0;
+
+  // Check if allocation adds up to 100%
+  const totalAllocation = stocksPercent + bondsPercent + cashPercent + otherPercent;
+
+  // Rule of thumb: Bonds % = Age (100 - age = stocks for moderate risk)
+  const recommendedStocksPercent = Math.max(40, Math.min(90, 110 - age));
+
+  // Calculate risk score (0-100, higher = more aggressive)
+  // Based on stock allocation primarily
+  const riskScore = Math.round(stocksPercent);
+
+  // Expected return calculation (simplified)
+  // Stocks: 10% historical, Bonds: 5%, Cash: 2%, Other: 7%
+  const expectedReturn =
+    (stocksPercent / 100) * 10 +
+    (bondsPercent / 100) * 5 +
+    (cashPercent / 100) * 2 +
+    (otherPercent / 100) * 7;
+
+  // Determine recommended allocation based on age and risk tolerance
+  let targetAllocation = '';
+  if (age < 35) {
+    targetAllocation = 'Aggressive (80-90% stocks, 10-20% bonds)';
+  } else if (age < 50) {
+    targetAllocation = 'Moderate-Aggressive (70-80% stocks, 20-30% bonds)';
+  } else if (age < 60) {
+    targetAllocation = 'Moderate (60-70% stocks, 30-40% bonds)';
+  } else {
+    targetAllocation = 'Conservative (40-50% stocks, 50-60% bonds)';
+  }
+
+  // Check for rebalancing needs
+  const stocksDiff = Math.abs(stocksPercent - recommendedStocksPercent);
+  const rebalancingNeeded = stocksDiff > 10; // More than 10% off target
+
+  // Generate warnings
+  const allocationWarnings: string[] = [];
+
+  if (totalAllocation !== 100) {
+    allocationWarnings.push(`Portfolio allocation totals ${totalAllocation.toFixed(1)}% instead of 100%`);
+  }
+  if (cashPercent > 20) {
+    allocationWarnings.push(`High cash allocation (${cashPercent}%) may reduce long-term returns`);
+  }
+  if (stocksPercent > 90 && age > 50) {
+    allocationWarnings.push(`Very aggressive allocation for age ${age} - consider more bonds for stability`);
+  }
+  if (stocksPercent < 50 && age < 40) {
+    allocationWarnings.push(`Conservative allocation for age ${age} - missing growth opportunities`);
+  }
+  if (portfolio.averageExpenseRatio && portfolio.averageExpenseRatio > 1.0) {
+    allocationWarnings.push(`High expense ratio (${portfolio.averageExpenseRatio}%) - consider low-cost index funds`);
+  }
+
+  return {
+    riskScore,
+    expectedReturn: Math.round(expectedReturn * 10) / 10,
+    targetAllocation,
+    rebalancingNeeded,
+    allocationWarnings,
+  };
+}
+
+/**
+ * Calculate debt payoff strategies (avalanche vs snowball)
+ */
+function calculateDebtPayoffAnalysis(data: ClientData, monthlySurplus: number) {
+  const detailedDebts = data.detailedDebts;
+  if (!detailedDebts) return undefined;
+
+  // Collect all debts into a single array
+  const allDebts: Array<{ name: string; balance: number; apr: number; minPayment: number }> = [];
+
+  if (detailedDebts.creditCardDebts) {
+    allDebts.push(...detailedDebts.creditCardDebts);
+  }
+  if (detailedDebts.studentLoanDebts) {
+    allDebts.push(...detailedDebts.studentLoanDebts);
+  }
+  if (detailedDebts.otherDebts) {
+    allDebts.push(...detailedDebts.otherDebts);
+  }
+  if (detailedDebts.carLoanDebts) {
+    allDebts.push(...detailedDebts.carLoanDebts.map(d => ({
+      name: d.name,
+      balance: d.balance,
+      apr: d.apr,
+      minPayment: d.monthlyPayment,
+    })));
+  }
+
+  if (allDebts.length === 0) return undefined;
+
+  // Calculate total minimum payment
+  const totalMinPayment = allDebts.reduce((sum, debt) => sum + debt.minPayment, 0);
+
+  // Assume extra payment of 10% of surplus or $100, whichever is larger
+  const extraPayment = Math.max(100, monthlySurplus * 0.1);
+  const totalPayment = totalMinPayment + extraPayment;
+
+  // Avalanche method: Pay off highest APR first
+  const avalancheDebts = [...allDebts].sort((a, b) => b.apr - a.apr);
+  const avalancheResult = simulateDebtPayoff(avalancheDebts, totalPayment);
+
+  // Snowball method: Pay off smallest balance first
+  const snowballDebts = [...allDebts].sort((a, b) => a.balance - b.balance);
+  const snowballResult = simulateDebtPayoff(snowballDebts, totalPayment);
+
+  return {
+    totalInterestAvalanche: avalancheResult.totalInterest,
+    totalInterestSnowball: snowballResult.totalInterest,
+    savingsFromAvalanche: snowballResult.totalInterest - avalancheResult.totalInterest,
+    monthsToPayoffAvalanche: avalancheResult.monthsToPayoff,
+    monthsToPayoffSnowball: snowballResult.monthsToPayoff,
+    recommendedMethod: avalancheResult.totalInterest < snowballResult.totalInterest ? 'avalanche' as const : 'snowball' as const,
+  };
+}
+
+/**
+ * Simulate debt payoff using a specific ordering
+ */
+function simulateDebtPayoff(
+  debts: Array<{ balance: number; apr: number; minPayment: number }>,
+  totalMonthlyPayment: number
+): { totalInterest: number; monthsToPayoff: number } {
+  // Clone debts to avoid modifying original
+  const debtsCopy = debts.map(d => ({ ...d }));
+  let totalInterest = 0;
+  let monthsToPayoff = 0;
+  const maxMonths = 360; // 30 year cap
+
+  while (debtsCopy.some(d => d.balance > 0) && monthsToPayoff < maxMonths) {
+    monthsToPayoff++;
+    let remainingPayment = totalMonthlyPayment;
+
+    // Pay minimum on all debts
+    for (const debt of debtsCopy) {
+      if (debt.balance <= 0) continue;
+
+      const monthlyInterest = (debt.balance * debt.apr) / 100 / 12;
+      totalInterest += monthlyInterest;
+      debt.balance += monthlyInterest;
+
+      const payment = Math.min(debt.minPayment, debt.balance, remainingPayment);
+      debt.balance -= payment;
+      remainingPayment -= payment;
+    }
+
+    // Apply extra payment to first debt with balance
+    if (remainingPayment > 0) {
+      const targetDebt = debtsCopy.find(d => d.balance > 0);
+      if (targetDebt) {
+        const extraPayment = Math.min(remainingPayment, targetDebt.balance);
+        targetDebt.balance -= extraPayment;
+      }
+    }
+  }
+
+  return { totalInterest, monthsToPayoff };
+}
+
+/**
+ * Calculate college planning metrics
+ */
+function calculateCollegePlanning(data: ClientData) {
+  if (!data.dependents || data.dependents === 0) return undefined;
+
+  // Assume youngest child is newborn for estimation
+  // (In real implementation, would ask for children's ages)
+  const yearsUntilCollege = 18;
+
+  // Average 4-year college cost in 2024: ~$100,000 (public), ~$200,000 (private)
+  // Use middle estimate of $150,000
+  const currentCollegeCost = 150000;
+
+  // College inflation rate: ~5% annually
+  const collegeInflationRate = 0.05;
+  const estimatedTotalCost = currentCollegeCost * Math.pow(1 + collegeInflationRate, yearsUntilCollege);
+
+  // Current education savings (estimate 30% of brokerage + any education goal)
+  const currentSavings = data.goals?.educationSavings || (data.brokerage * 0.3);
+
+  // Calculate monthly savings needed
+  const monthsUntilCollege = yearsUntilCollege * 12;
+  const monthlySavingsNeeded = calculateMonthlyPaymentForGoal(
+    currentSavings,
+    estimatedTotalCost,
+    monthsUntilCollege,
+    0.07 // Assume 7% investment return
+  );
+
+  // Project current savings with growth
+  const returnRate = 0.07;
+  const projectedSavings = currentSavings * Math.pow(1 + returnRate, yearsUntilCollege);
+  const projectedShortfall = Math.max(0, estimatedTotalCost - projectedSavings);
+
+  return {
+    yearsUntilCollege,
+    estimatedTotalCost,
+    currentSavings,
+    monthlySavingsNeeded,
+    projectedShortfall,
+  };
+}
+
+/**
+ * Generate prioritized action items from risk assessment
+ */
+function generateActionItems(
+  data: ClientData,
+  metrics: FinancialMetrics,
+  risk: RiskAssessment
+) {
+  const actionItems: NonNullable<typeof metrics['actionItems']> = [];
+
+  // Critical gaps from risk assessment
+  if (risk.criticalGaps.length > 0) {
+    risk.criticalGaps.forEach(category => {
+      const riskCategory = Object.values(risk.categories).find(c => c.name === category);
+      if (riskCategory) {
+        actionItems.push({
+          priority: 'critical',
+          category: riskCategory.name,
+          action: riskCategory.recommendations[0] || riskCategory.message,
+          impact: 'Protects family from financial disaster',
+          deadline: '30 days',
+        });
+      }
+    });
+  }
+
+  // Emergency fund
+  if (metrics.emergencyFundMonths < 3) {
+    actionItems.push({
+      priority: 'critical',
+      category: 'Emergency Fund',
+      action: `Build emergency fund to 3-6 months (${formatCurrency(metrics.totalMonthlyExpenses * 6)})`,
+      impact: 'Prevents debt spiral in emergencies',
+      deadline: '90 days',
+    });
+  }
+
+  // Retirement shortfall
+  if (metrics.retirementAnalysis && metrics.retirementAnalysis.gap > 50000) {
+    actionItems.push({
+      priority: 'high',
+      category: 'Retirement Planning',
+      action: `Increase retirement savings by ${formatCurrency(metrics.retirementAnalysis.monthlySavingsNeeded)}/month`,
+      impact: `Close ${formatCurrency(metrics.retirementAnalysis.gap)} retirement gap`,
+      deadline: 'Start immediately',
+    });
+  }
+
+  // High-interest debt
+  if (data.detailedDebts && data.detailedDebts.creditCardDebts) {
+    const highInterestDebt = data.detailedDebts.creditCardDebts.filter(d => d.apr > 15);
+    if (highInterestDebt.length > 0) {
+      const totalHighInterest = highInterestDebt.reduce((sum, d) => sum + d.balance, 0);
+      actionItems.push({
+        priority: 'high',
+        category: 'Debt Reduction',
+        action: `Pay off ${formatCurrency(totalHighInterest)} in high-interest credit card debt`,
+        impact: 'Save thousands in interest charges',
+        deadline: '12 months',
+      });
+    }
+  }
+
+  // Low savings rate
+  if (metrics.savingsRate < 10) {
+    actionItems.push({
+      priority: 'high',
+      category: 'Savings Rate',
+      action: 'Increase savings rate to at least 10% of income',
+      impact: 'Build wealth and reach financial goals faster',
+      deadline: '60 days',
+    });
+  }
+
+  // Portfolio rebalancing
+  if (metrics.portfolioAnalysis?.rebalancingNeeded) {
+    actionItems.push({
+      priority: 'medium',
+      category: 'Investments',
+      action: 'Rebalance portfolio to target allocation',
+      impact: 'Optimize risk/return for your age and goals',
+      deadline: '30 days',
+    });
+  }
+
+  // Sort by priority
+  const priorityOrder = { critical: 0, high: 1, medium: 2 };
+  actionItems.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+  return actionItems.slice(0, 8); // Top 8 actions
 }

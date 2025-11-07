@@ -87,6 +87,35 @@ const sampleData: ClientData = {
       targetDate: '2026-06-01',
     },
   },
+  // Detailed debt tracking for advanced payoff analysis
+  detailedDebts: {
+    creditCardDebts: [
+      { name: 'Chase Sapphire', balance: 5000, apr: 18.99, minPayment: 150 },
+      { name: 'Amex Blue', balance: 3000, apr: 16.49, minPayment: 90 },
+    ],
+    studentLoanDebts: [
+      { name: 'Federal Loan 1', balance: 15000, apr: 4.5, minPayment: 180 },
+      { name: 'Federal Loan 2', balance: 10000, apr: 5.0, minPayment: 120 },
+    ],
+    carLoanDebts: [
+      { name: 'Toyota Highlander', balance: 18000, apr: 3.9, monthlyPayment: 400 },
+    ],
+  },
+  // Portfolio allocation
+  portfolio: {
+    stocksPercent: 70,
+    bondsPercent: 25,
+    cashPercent: 5,
+    otherPercent: 0,
+    averageExpenseRatio: 0.15,
+  },
+  // Financial assumptions
+  assumptions: {
+    inflationRate: 3.0,
+    investmentReturnRate: 7.0,
+    salaryGrowthRate: 3.0,
+    socialSecurityStartAge: 67,
+  },
 };
 
 export const useClientStore = create<ClientStore>()(
@@ -101,6 +130,12 @@ export const useClientStore = create<ClientStore>()(
       setClientData: (data: ClientData) => {
         const metrics = calculateFinancialMetrics(data);
         const risk = generateRiskAssessment(data, metrics);
+
+        // Extract action items from temp storage (set by generateRiskAssessment)
+        if ((metrics as any)._actionItemsToAdd) {
+          metrics.actionItems = (metrics as any)._actionItemsToAdd;
+          delete (metrics as any)._actionItemsToAdd;
+        }
 
         set({
           currentClient: data,
@@ -118,6 +153,12 @@ export const useClientStore = create<ClientStore>()(
 
         const metrics = calculateFinancialMetrics(client);
         const risk = generateRiskAssessment(client, metrics);
+
+        // Extract action items from temp storage (set by generateRiskAssessment)
+        if ((metrics as any)._actionItemsToAdd) {
+          metrics.actionItems = (metrics as any)._actionItemsToAdd;
+          delete (metrics as any)._actionItemsToAdd;
+        }
 
         set({
           currentMetrics: metrics,

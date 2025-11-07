@@ -17,6 +17,7 @@ const EnhancedInsurance = lazy(() => import('./EnhancedInsurance'));
 const AdvancedAnalytics = lazy(() => import('./AdvancedAnalytics'));
 const GoalProgress = lazy(() => import('./GoalProgress'));
 const RiskAssessment = lazy(() => import('../RiskAssessment/RiskAssessment'));
+const ActionItems = lazy(() => import('./ActionItems'));
 import {
   DollarSign,
   TrendingUp,
@@ -69,6 +70,7 @@ export default function Dashboard() {
   // Memoize section configuration
   const sections = useMemo(() => [
     { id: 'overview', name: 'Overview', icon: <Activity className="w-4 h-4" /> },
+    { id: 'actions', name: 'Action Items', icon: <Target className="w-4 h-4" /> },
     { id: 'goals', name: 'Financial Goals', icon: <Target className="w-4 h-4" /> },
     { id: 'risk', name: 'Risk Assessment', icon: <Shield className="w-4 h-4" /> },
     { id: 'cashflow', name: 'Cash Flow', icon: <BarChart className="w-4 h-4" /> },
@@ -332,6 +334,13 @@ export default function Dashboard() {
         </div>
       </div>
         </div>
+      )}
+
+      {/* Action Items */}
+      {activeSection === 'actions' && (
+        <Suspense fallback={<SectionLoader />}>
+          <ActionItems />
+        </Suspense>
       )}
 
       {/* Financial Goals */}

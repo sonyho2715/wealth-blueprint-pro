@@ -33,6 +33,33 @@ export interface ClientData {
   creditCards: number;
   otherDebts: number;
 
+  // Detailed Debt Tracking (optional - for advanced debt payoff analysis)
+  detailedDebts?: {
+    mortgage?: { balance: number; apr: number; monthlyPayment: number; yearsRemaining?: number };
+    creditCardDebts?: Array<{ name: string; balance: number; apr: number; minPayment: number }>;
+    studentLoanDebts?: Array<{ name: string; balance: number; apr: number; minPayment: number }>;
+    carLoanDebts?: Array<{ name: string; balance: number; apr: number; monthlyPayment: number }>;
+    otherDebts?: Array<{ name: string; balance: number; apr: number; minPayment: number }>;
+  };
+
+  // Portfolio Allocation (for investment analysis)
+  portfolio?: {
+    stocksPercent?: number; // % in stocks/equity
+    bondsPercent?: number; // % in bonds/fixed income
+    cashPercent?: number; // % in cash/money market
+    otherPercent?: number; // % in other (real estate, commodities, etc.)
+    averageExpenseRatio?: number; // Average fund expense ratio (e.g., 0.5 for 0.5%)
+  };
+
+  // Financial Assumptions
+  assumptions?: {
+    inflationRate?: number; // Annual inflation (default 3%)
+    investmentReturnRate?: number; // Expected investment return (default 7%)
+    salaryGrowthRate?: number; // Expected salary growth (default 3%)
+    socialSecurityStartAge?: number; // When to start SS (default 67)
+    estimatedMonthlySS?: number; // Estimated monthly Social Security benefit
+  };
+
   // Monthly Expenses
   monthlyHousing: number;
   monthlyTransportation: number;
@@ -111,6 +138,69 @@ export interface FinancialMetrics {
     savingsProgress?: number; // % of annual savings goal achieved
     majorPurchaseProgress?: number; // % of major purchase saved
   };
+
+  // Enhanced Goal Metrics (monthly savings needed to achieve goals)
+  goalMonthlySavings?: {
+    emergencyFund?: number; // Monthly savings needed
+    homeDownPayment?: number;
+    educationSavings?: number;
+    retirementShortfall?: number; // Monthly savings needed to close retirement gap
+    majorPurchase?: number;
+  };
+
+  // Enhanced Retirement Metrics
+  retirementAnalysis?: {
+    projectedSavingsAtRetirement: number;
+    savingsNeededAtRetirement: number;
+    gap: number;
+    monthlySavingsNeeded: number;
+    estimatedSocialSecurity: number;
+    inflationAdjustedIncome: number;
+  };
+
+  // Social Security Estimate
+  socialSecurityEstimate?: {
+    monthlyBenefit: number;
+    annualBenefit: number;
+    fullRetirementAge: number;
+  };
+
+  // Portfolio Analysis
+  portfolioAnalysis?: {
+    riskScore: number; // 0-100, higher = more aggressive
+    expectedReturn: number; // Expected annual return %
+    targetAllocation: string; // Recommended allocation
+    rebalancingNeeded: boolean;
+    allocationWarnings: string[];
+  };
+
+  // Debt Payoff Analysis
+  debtPayoffAnalysis?: {
+    totalInterestAvalanche: number; // Total interest with avalanche method
+    totalInterestSnowball: number; // Total interest with snowball method
+    savingsFromAvalanche: number; // How much saved using avalanche
+    monthsToPayoffAvalanche: number;
+    monthsToPayoffSnowball: number;
+    recommendedMethod: 'avalanche' | 'snowball';
+  };
+
+  // College Planning
+  collegePlanning?: {
+    yearsUntilCollege: number;
+    estimatedTotalCost: number; // 4-year total with inflation
+    currentSavings: number;
+    monthlySavingsNeeded: number;
+    projectedShortfall: number;
+  };
+
+  // Action Items (top priority recommendations)
+  actionItems?: Array<{
+    priority: 'critical' | 'high' | 'medium';
+    category: string;
+    action: string;
+    impact: string;
+    deadline?: string;
+  }>;
 }
 
 export interface RiskAssessment {
