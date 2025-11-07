@@ -7,7 +7,6 @@ const LivingBalanceSheet = lazy(() => import('./LivingBalanceSheet'));
 const GoalsAndRecommendations = lazy(() => import('./GoalsAndRecommendations'));
 const WhatIfScenarios = lazy(() => import('./WhatIfScenarios'));
 const RetirementProjection = lazy(() => import('./RetirementProjection'));
-const DebtStrategy = lazy(() => import('./DebtStrategy'));
 const PeerBenchmark = lazy(() => import('./PeerBenchmark'));
 const TaxOptimization = lazy(() => import('./TaxOptimization'));
 const BusinessOwnerDashboard = lazy(() => import('./BusinessOwnerDashboard'));
@@ -18,6 +17,9 @@ const AdvancedAnalytics = lazy(() => import('./AdvancedAnalytics'));
 const GoalProgress = lazy(() => import('./GoalProgress'));
 const RiskAssessment = lazy(() => import('../RiskAssessment/RiskAssessment'));
 const ActionItems = lazy(() => import('./ActionItems'));
+const DebtPayoffCalculator = lazy(() => import('./DebtPayoffCalculator'));
+const CollegePlanning = lazy(() => import('./CollegePlanning'));
+const PortfolioAnalysis = lazy(() => import('./PortfolioAnalysis'));
 import {
   DollarSign,
   TrendingUp,
@@ -74,6 +76,8 @@ export default function Dashboard() {
     { id: 'goals', name: 'Financial Goals', icon: <Target className="w-4 h-4" /> },
     { id: 'risk', name: 'Risk Assessment', icon: <Shield className="w-4 h-4" /> },
     { id: 'cashflow', name: 'Cash Flow', icon: <BarChart className="w-4 h-4" /> },
+    { id: 'college', name: 'College Planning', icon: <Target className="w-4 h-4" /> },
+    { id: 'portfolio', name: 'Portfolio Analysis', icon: <BarChart className="w-4 h-4" /> },
     { id: 'planning', name: 'Life Planning', icon: <Target className="w-4 h-4" /> },
     { id: 'insurance', name: 'Insurance Quotes', icon: <Shield className="w-4 h-4" /> },
     { id: 'analytics', name: 'Advanced Analytics', icon: <Sparkles className="w-4 h-4" /> },
@@ -364,6 +368,20 @@ export default function Dashboard() {
         </Suspense>
       )}
 
+      {/* College Planning */}
+      {activeSection === 'college' && (
+        <Suspense fallback={<SectionLoader />}>
+          <CollegePlanning />
+        </Suspense>
+      )}
+
+      {/* Portfolio Analysis */}
+      {activeSection === 'portfolio' && (
+        <Suspense fallback={<SectionLoader />}>
+          <PortfolioAnalysis />
+        </Suspense>
+      )}
+
       {/* Life Planning */}
       {activeSection === 'planning' && (
         <Suspense fallback={<SectionLoader />}>
@@ -402,7 +420,7 @@ export default function Dashboard() {
       {/* Debt Strategy */}
       {activeSection === 'debt' && (
         <Suspense fallback={<SectionLoader />}>
-          <DebtStrategy />
+          <DebtPayoffCalculator />
         </Suspense>
       )}
 

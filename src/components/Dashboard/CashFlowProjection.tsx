@@ -16,12 +16,13 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler,
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -29,6 +30,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -210,8 +212,119 @@ export default function CashFlowProjection() {
     }
   };
 
+  // Monthly expense breakdown chart data
+  const expenseBreakdownData = {
+    labels: ['Housing', 'Transportation', 'Food', 'Utilities', 'Insurance', 'Entertainment', 'Other'],
+    datasets: [
+      {
+        data: [
+          currentClient.monthlyHousing,
+          currentClient.monthlyTransportation,
+          currentClient.monthlyFood,
+          currentClient.monthlyUtilities,
+          currentClient.monthlyInsurance,
+          currentClient.monthlyEntertainment,
+          currentClient.monthlyOther,
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',   // Blue
+          'rgba(16, 185, 129, 0.8)',   // Green
+          'rgba(245, 158, 11, 0.8)',   // Orange
+          'rgba(139, 92, 246, 0.8)',   // Purple
+          'rgba(239, 68, 68, 0.8)',    // Red
+          'rgba(236, 72, 153, 0.8)',   // Pink
+          'rgba(107, 114, 128, 0.8)',  // Gray
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+    ],
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+        labels: {
+          font: {
+            size: 11,
+          },
+          padding: 10,
+          generateLabels: (chart: any) => {
+            const data = chart.data;
+            if (data.labels.length && data.datasets.length) {
+              return data.labels.map((label: string, i: number) => {
+                const value = data.datasets[0].data[i];
+                const percentage = ((value / currentMetrics.totalMonthlyExpenses) * 100).toFixed(1);
+                return {
+                  text: `${label}: ${formatCurrency(value)} (${percentage}%)`,
+                  fillStyle: data.datasets[0].backgroundColor[i],
+                  hidden: false,
+                  index: i,
+                };
+              });
+            }
+            return [];
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const value = context.parsed;
+            const percentage = ((value / currentMetrics.totalMonthlyExpenses) * 100).toFixed(1);
+            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+          },
+        },
+      },
+    },
+  };
+
   return (
     <div className="space-y-6">
+      {/* Current Monthly Spending Breakdown */}
+      <div className="card bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Current Monthly Spending Breakdown</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div style={{ height: '300px', position: 'relative' }}>
+            <Pie data={expenseBreakdownData} options={pieChartOptions} />
+          </div>
+          <div>
+            <div className="space-y-2">
+              {[
+                { label: 'Housing', value: currentClient.monthlyHousing, color: 'bg-blue-500' },
+                { label: 'Transportation', value: currentClient.monthlyTransportation, color: 'bg-green-500' },
+                { label: 'Food', value: currentClient.monthlyFood, color: 'bg-orange-500' },
+                { label: 'Utilities', value: currentClient.monthlyUtilities, color: 'bg-purple-500' },
+                { label: 'Insurance', value: currentClient.monthlyInsurance, color: 'bg-red-500' },
+                { label: 'Entertainment', value: currentClient.monthlyEntertainment, color: 'bg-pink-500' },
+                { label: 'Other', value: currentClient.monthlyOther, color: 'bg-gray-500' },
+              ].map((item) => {
+                const percentage = ((item.value / currentMetrics.totalMonthlyExpenses) * 100).toFixed(1);
+                return (
+                  <div key={item.label} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 ${item.color} rounded-full`}></div>
+                      <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-gray-900">{formatCurrency(item.value)}</span>
+                      <span className="text-xs text-gray-600 ml-2">({percentage}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between p-3 bg-gray-100 rounded border-2 border-gray-300 mt-3">
+                <span className="font-bold text-gray-900">Total Monthly</span>
+                <span className="text-lg font-bold text-gray-900">{formatCurrency(currentMetrics.totalMonthlyExpenses)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="card-gradient">
         <div className="flex items-center gap-3 mb-4">
