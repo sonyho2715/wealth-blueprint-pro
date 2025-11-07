@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import { formatCurrency } from '../../utils/calculations';
+import type { ClientData } from '../../types/financial.types';
 import {
   Target,
   TrendingUp,
@@ -13,10 +14,53 @@ import {
   Gift,
   CheckCircle,
   AlertCircle,
+  Edit3,
+  Save,
+  X,
 } from 'lucide-react';
 
 export default function GoalProgress() {
-  const { currentClient, currentMetrics } = useClientStore();
+  const { currentClient, currentMetrics, setClientData } = useClientStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedGoals, setEditedGoals] = useState(currentClient?.goals || {});
+
+  const handleEditClick = () => {
+    setEditedGoals(currentClient?.goals || {});
+    setIsEditing(true);
+  };
+
+  const handleSaveClick = () => {
+    if (currentClient) {
+      const updatedClient: ClientData = {
+        ...currentClient,
+        goals: editedGoals,
+      };
+      setClientData(updatedClient);
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelClick = () => {
+    setEditedGoals(currentClient?.goals || {});
+    setIsEditing(false);
+  };
+
+  const handleGoalChange = (field: string, value: any) => {
+    setEditedGoals((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleMajorPurchaseChange = (field: string, value: any) => {
+    setEditedGoals((prev) => ({
+      ...prev,
+      majorPurchase: {
+        ...prev.majorPurchase,
+        [field]: value,
+      },
+    }));
+  };
 
   const goals = useMemo(() => {
     if (!currentClient?.goals || !currentMetrics?.goalProgress) return [];
@@ -160,12 +204,195 @@ export default function GoalProgress() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Financial Goals</h2>
-        <p className="text-gray-600">Track your progress toward achieving your financial goals</p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="text-center flex-1">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Financial Goals</h2>
+          <p className="text-gray-600">Track your progress toward achieving your financial goals</p>
+        </div>
+        {!isEditing ? (
+          <button
+            onClick={handleEditClick}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit Goals
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveClick}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              Save
+            </button>
+            <button
+              onClick={handleCancelClick}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {isEditing ? (
+        <div className="card bg-blue-50 border-2 border-blue-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Edit Your Financial Goals</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Retirement Age */}
+            <div>
+              <label className="label">🏖️ Desired Retirement Age</label>
+              <input
+                type="number"
+                value={editedGoals.retirementAge || ''}
+                onChange={(e) => handleGoalChange('retirementAge', parseFloat(e.target.value) || 65)}
+                className="input"
+                placeholder="65"
+              />
+            </div>
+
+            {/* Retirement Income */}
+            <div>
+              <label className="label">💰 Annual Retirement Income Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={editedGoals.retirementIncome || ''}
+                  onChange={(e) => handleGoalChange('retirementIncome', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="80,000"
+                />
+              </div>
+            </div>
+
+            {/* Emergency Fund */}
+            <div>
+              <label className="label">🚨 Emergency Fund Goal (Months)</label>
+              <input
+                type="number"
+                value={editedGoals.emergencyFundMonths || ''}
+                onChange={(e) => handleGoalChange('emergencyFundMonths', parseFloat(e.target.value) || 6)}
+                className="input"
+                placeholder="6"
+              />
+            </div>
+
+            {/* Home Down Payment */}
+            <div>
+              <label className="label">🏠 Home Down Payment Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={editedGoals.homeDownPayment || ''}
+                  onChange={(e) => handleGoalChange('homeDownPayment', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="100,000"
+                />
+              </div>
+            </div>
+
+            {/* Education Savings */}
+            <div>
+              <label className="label">🎓 Education Savings Goal</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={editedGoals.educationSavings || ''}
+                  onChange={(e) => handleGoalChange('educationSavings', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="50,000"
+                />
+              </div>
+            </div>
+
+            {/* Net Worth Target */}
+            <div>
+              <label className="label">📈 Net Worth Target</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={editedGoals.netWorthTarget || ''}
+                  onChange={(e) => handleGoalChange('netWorthTarget', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="1,000,000"
+                />
+              </div>
+            </div>
+
+            {/* Annual Savings Target */}
+            <div>
+              <label className="label">💵 Annual Savings Target</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                <input
+                  type="number"
+                  value={editedGoals.annualSavingsTarget || ''}
+                  onChange={(e) => handleGoalChange('annualSavingsTarget', parseFloat(e.target.value) || 0)}
+                  className="input pl-8"
+                  placeholder="25,000"
+                />
+              </div>
+            </div>
+
+            {/* Debt Free Date */}
+            <div>
+              <label className="label">🎯 Target Debt-Free Date</label>
+              <input
+                type="date"
+                value={editedGoals.debtFreeDate || ''}
+                onChange={(e) => handleGoalChange('debtFreeDate', e.target.value)}
+                className="input"
+              />
+            </div>
+          </div>
+
+          {/* Major Purchase Section */}
+          <div className="border-t-2 border-blue-300 mt-6 pt-6">
+            <h4 className="text-md font-bold text-gray-900 mb-4">🎁 Major Purchase Goal (Optional)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Description</label>
+                <input
+                  type="text"
+                  value={editedGoals.majorPurchase?.description || ''}
+                  onChange={(e) => handleMajorPurchaseChange('description', e.target.value)}
+                  className="input"
+                  placeholder="Vacation, Car, etc."
+                />
+              </div>
+              <div>
+                <label className="label">Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                  <input
+                    type="number"
+                    value={editedGoals.majorPurchase?.amount || ''}
+                    onChange={(e) => handleMajorPurchaseChange('amount', parseFloat(e.target.value) || 0)}
+                    className="input pl-8"
+                    placeholder="25,000"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label">Target Date</label>
+                <input
+                  type="date"
+                  value={editedGoals.majorPurchase?.targetDate || ''}
+                  onChange={(e) => handleMajorPurchaseChange('targetDate', e.target.value)}
+                  className="input"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {goals.map((goal, index) => {
           const status = getProgressStatus(goal.progress);
           return (
@@ -201,7 +428,8 @@ export default function GoalProgress() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
