@@ -1,18 +1,22 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense, memo, useMemo, useCallback } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import { formatCurrency, formatPercentage } from '../../utils/calculations';
-import LivingBalanceSheet from './LivingBalanceSheet';
-import GoalsAndRecommendations from './GoalsAndRecommendations';
-import WhatIfScenarios from './WhatIfScenarios';
-import RetirementProjection from './RetirementProjection';
-import DebtStrategy from './DebtStrategy';
-import PeerBenchmark from './PeerBenchmark';
-import TaxOptimization from './TaxOptimization';
-import BusinessOwnerDashboard from './BusinessOwnerDashboard';
-import LifePlanning from './LifePlanning';
-import CashFlowProjection from './CashFlowProjection';
-import EnhancedInsurance from './EnhancedInsurance';
-import AdvancedAnalytics from './AdvancedAnalytics';
+
+// Lazy load dashboard sections for better performance
+const LivingBalanceSheet = lazy(() => import('./LivingBalanceSheet'));
+const GoalsAndRecommendations = lazy(() => import('./GoalsAndRecommendations'));
+const WhatIfScenarios = lazy(() => import('./WhatIfScenarios'));
+const RetirementProjection = lazy(() => import('./RetirementProjection'));
+const DebtStrategy = lazy(() => import('./DebtStrategy'));
+const PeerBenchmark = lazy(() => import('./PeerBenchmark'));
+const TaxOptimization = lazy(() => import('./TaxOptimization'));
+const BusinessOwnerDashboard = lazy(() => import('./BusinessOwnerDashboard'));
+const LifePlanning = lazy(() => import('./LifePlanning'));
+const CashFlowProjection = lazy(() => import('./CashFlowProjection'));
+const EnhancedInsurance = lazy(() => import('./EnhancedInsurance'));
+const AdvancedAnalytics = lazy(() => import('./AdvancedAnalytics'));
+const GoalProgress = lazy(() => import('./GoalProgress'));
+const RiskAssessment = lazy(() => import('../RiskAssessment/RiskAssessment'));
 import {
   DollarSign,
   TrendingUp,
@@ -30,32 +34,43 @@ import {
   Target,
   Sparkles,
   BarChart,
+  Loader2,
 } from 'lucide-react';
+
+// Loading component for Suspense fallback
+function SectionLoader() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <span className="ml-3 text-gray-600">Loading section...</span>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { currentClient, currentMetrics } = useClientStore();
   const [activeSection, setActiveSection] = useState<string>('overview');
 
-  if (!currentClient || !currentMetrics) {
-    return null;
-  }
-
-  const getHealthScoreColor = (score: number) => {
+  // Memoize helper functions to avoid recreating them on every render
+  const getHealthScoreColor = useCallback((score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';
     if (score >= 60) return 'text-blue-600 bg-blue-100';
     if (score >= 40) return 'text-yellow-600 bg-yellow-100';
     return 'text-red-600 bg-red-100';
-  };
+  }, []);
 
-  const getHealthScoreLabel = (score: number) => {
+  const getHealthScoreLabel = useCallback((score: number) => {
     if (score >= 80) return 'Excellent';
     if (score >= 60) return 'Good';
     if (score >= 40) return 'Needs Improvement';
     return 'Critical';
-  };
+  }, []);
 
-  const sections = [
+  // Memoize section configuration
+  const sections = useMemo(() => [
     { id: 'overview', name: 'Overview', icon: <Activity className="w-4 h-4" /> },
+    { id: 'goals', name: 'Financial Goals', icon: <Target className="w-4 h-4" /> },
+    { id: 'risk', name: 'Risk Assessment', icon: <Shield className="w-4 h-4" /> },
     { id: 'cashflow', name: 'Cash Flow', icon: <BarChart className="w-4 h-4" /> },
     { id: 'planning', name: 'Life Planning', icon: <Target className="w-4 h-4" /> },
     { id: 'insurance', name: 'Insurance Quotes', icon: <Shield className="w-4 h-4" /> },
@@ -66,7 +81,27 @@ export default function Dashboard() {
     { id: 'peers', name: 'Benchmarks', icon: <Users className="w-4 h-4" /> },
     { id: 'tax', name: 'Tax Optimization', icon: <Receipt className="w-4 h-4" /> },
     { id: 'business', name: 'Business Owner', icon: <Briefcase className="w-4 h-4" /> },
-  ];
+  ], []);
+
+  // Memoize calculated values from metrics
+  const monthlySurplus = useMemo(() => {
+    if (!currentMetrics) return 0;
+    return currentMetrics.totalIncome / 12 - currentMetrics.totalMonthlyExpenses;
+  }, [currentMetrics]);
+
+  const healthScoreColor = useMemo(() => {
+    if (!currentMetrics) return '';
+    return getHealthScoreColor(currentMetrics.healthScore);
+  }, [currentMetrics, getHealthScoreColor]);
+
+  const healthScoreLabel = useMemo(() => {
+    if (!currentMetrics) return '';
+    return getHealthScoreLabel(currentMetrics.healthScore);
+  }, [currentMetrics, getHealthScoreLabel]);
+
+  if (!currentClient || !currentMetrics) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -135,10 +170,14 @@ export default function Dashboard() {
           )}
 
           {/* Financial Snapshot Section */}
-          <LivingBalanceSheet />
+          <Suspense fallback={<SectionLoader />}>
+            <LivingBalanceSheet />
+          </Suspense>
 
           {/* Goals & Recommendations Section */}
-          <GoalsAndRecommendations />
+          <Suspense fallback={<SectionLoader />}>
+            <GoalsAndRecommendations />
+          </Suspense>
 
           {/* Divider */}
           <div className="border-t-2 border-gray-200 pt-8">
@@ -184,13 +223,13 @@ export default function Dashboard() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Financial Health Score</h3>
-          <span className={`px-4 py-2 rounded-full font-bold text-2xl ${getHealthScoreColor(currentMetrics.healthScore)}`}>
+          <span className={`px-4 py-2 rounded-full font-bold text-2xl ${healthScoreColor}`}>
             {currentMetrics.healthScore}/100
           </span>
         </div>
         <div className="mb-4">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>{getHealthScoreLabel(currentMetrics.healthScore)}</span>
+            <span>{healthScoreLabel}</span>
             <span>{currentMetrics.healthScore}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
@@ -284,12 +323,10 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600 mb-2">Monthly Surplus/Deficit</p>
             <p
               className={`text-3xl font-bold ${
-                currentMetrics.totalIncome / 12 - currentMetrics.totalMonthlyExpenses > 0
-                  ? 'text-green-600'
-                  : 'text-red-600'
+                monthlySurplus > 0 ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              {formatCurrency(currentMetrics.totalIncome / 12 - currentMetrics.totalMonthlyExpenses)}
+              {formatCurrency(monthlySurplus)}
             </p>
           </div>
         </div>
@@ -297,35 +334,89 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Financial Goals */}
+      {activeSection === 'goals' && (
+        <Suspense fallback={<SectionLoader />}>
+          <GoalProgress />
+        </Suspense>
+      )}
+
+      {/* Risk Assessment */}
+      {activeSection === 'risk' && (
+        <Suspense fallback={<SectionLoader />}>
+          <RiskAssessment />
+        </Suspense>
+      )}
+
       {/* Cash Flow Projection */}
-      {activeSection === 'cashflow' && <CashFlowProjection />}
+      {activeSection === 'cashflow' && (
+        <Suspense fallback={<SectionLoader />}>
+          <CashFlowProjection />
+        </Suspense>
+      )}
 
       {/* Life Planning */}
-      {activeSection === 'planning' && <LifePlanning />}
+      {activeSection === 'planning' && (
+        <Suspense fallback={<SectionLoader />}>
+          <LifePlanning />
+        </Suspense>
+      )}
 
       {/* Enhanced Insurance */}
-      {activeSection === 'insurance' && <EnhancedInsurance />}
+      {activeSection === 'insurance' && (
+        <Suspense fallback={<SectionLoader />}>
+          <EnhancedInsurance />
+        </Suspense>
+      )}
 
       {/* Advanced Analytics */}
-      {activeSection === 'analytics' && <AdvancedAnalytics />}
+      {activeSection === 'analytics' && (
+        <Suspense fallback={<SectionLoader />}>
+          <AdvancedAnalytics />
+        </Suspense>
+      )}
 
       {/* What-If Scenarios */}
-      {activeSection === 'whatif' && <WhatIfScenarios />}
+      {activeSection === 'whatif' && (
+        <Suspense fallback={<SectionLoader />}>
+          <WhatIfScenarios />
+        </Suspense>
+      )}
 
       {/* Retirement Projection */}
-      {activeSection === 'retirement' && <RetirementProjection />}
+      {activeSection === 'retirement' && (
+        <Suspense fallback={<SectionLoader />}>
+          <RetirementProjection />
+        </Suspense>
+      )}
 
       {/* Debt Strategy */}
-      {activeSection === 'debt' && <DebtStrategy />}
+      {activeSection === 'debt' && (
+        <Suspense fallback={<SectionLoader />}>
+          <DebtStrategy />
+        </Suspense>
+      )}
 
       {/* Peer Benchmarking */}
-      {activeSection === 'peers' && <PeerBenchmark />}
+      {activeSection === 'peers' && (
+        <Suspense fallback={<SectionLoader />}>
+          <PeerBenchmark />
+        </Suspense>
+      )}
 
       {/* Tax Optimization */}
-      {activeSection === 'tax' && <TaxOptimization />}
+      {activeSection === 'tax' && (
+        <Suspense fallback={<SectionLoader />}>
+          <TaxOptimization />
+        </Suspense>
+      )}
 
       {/* Business Owner Dashboard */}
-      {activeSection === 'business' && <BusinessOwnerDashboard />}
+      {activeSection === 'business' && (
+        <Suspense fallback={<SectionLoader />}>
+          <BusinessOwnerDashboard />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -338,7 +429,8 @@ interface MetricCardProps {
   color: 'blue' | 'green' | 'purple' | 'orange';
 }
 
-function MetricCard({ title, value, icon, trend, color }: MetricCardProps) {
+// Memoize MetricCard to prevent unnecessary re-renders
+const MetricCard = memo(function MetricCard({ title, value, icon, trend, color }: MetricCardProps) {
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     green: 'bg-green-100 text-green-600',
@@ -360,4 +452,4 @@ function MetricCard({ title, value, icon, trend, color }: MetricCardProps) {
       <p className="text-2xl font-bold text-gray-900">{value}</p>
     </div>
   );
-}
+});

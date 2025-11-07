@@ -5,9 +5,8 @@ import Header from './components/shared/Header';
 import Navigation from './components/shared/Navigation';
 import Dashboard from './components/Dashboard/Dashboard';
 import ClientInput from './components/ClientInput/ClientInput';
-import RiskAssessment from './components/RiskAssessment/RiskAssessment';
 
-type TabName = 'input' | 'dashboard' | 'risk';
+type TabName = 'input' | 'dashboard';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabName>('input');
@@ -33,7 +32,6 @@ function App() {
         <div className="space-y-6">
           {activeTab === 'input' && <ClientInput />}
           {activeTab === 'dashboard' && hasData && <Dashboard />}
-          {activeTab === 'risk' && hasData && <RiskAssessment />}
 
           {activeTab !== 'input' && !hasData && (
             <div className="card-highlight text-center py-16 animate-scale-in">

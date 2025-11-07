@@ -1,3 +1,4 @@
+import { useMemo, memo } from 'react';
 import { useClientStore } from '../../store/clientStore';
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -13,15 +14,30 @@ import {
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function Charts() {
+// Memoize chart component to prevent unnecessary re-renders
+const Charts = memo(function Charts() {
   const { currentClient, currentMetrics } = useClientStore();
 
-  if (!currentClient || !currentMetrics) {
-    return null;
-  }
+  // Memoize chart options to prevent recreating on every render
+  const pieChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+  }), []);
 
-  // Asset Allocation
-  const assetData = {
+  const barChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  }), []);
+
+  // Memoize asset data to prevent recalculating when dependencies don't change
+  const assetData = useMemo(() => {
+    if (!currentClient) return null;
+    return {
     labels: ['Checking', 'Savings', '401(k)', 'IRA', 'Brokerage', 'Home', 'Other'],
     datasets: [
       {
@@ -45,10 +61,13 @@ export default function Charts() {
         ],
       },
     ],
-  };
+    };
+  }, [currentClient]);
 
-  // Assets vs Liabilities
-  const balanceData = {
+  // Memoize balance data
+  const balanceData = useMemo(() => {
+    if (!currentMetrics) return null;
+    return {
     labels: ['Assets vs Liabilities'],
     datasets: [
       {
@@ -62,10 +81,13 @@ export default function Charts() {
         backgroundColor: '#ef4444',
       },
     ],
-  };
+    };
+  }, [currentMetrics]);
 
-  // Monthly Expenses
-  const expensesData = {
+  // Memoize expenses data
+  const expensesData = useMemo(() => {
+    if (!currentClient) return null;
+    return {
     labels: ['Housing', 'Transport', 'Food', 'Utilities', 'Insurance', 'Entertainment', 'Other'],
     datasets: [
       {
@@ -89,7 +111,12 @@ export default function Charts() {
         ],
       },
     ],
-  };
+    };
+  }, [currentClient]);
+
+  if (!currentClient || !currentMetrics || !assetData || !balanceData || !expensesData) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -103,7 +130,7 @@ export default function Charts() {
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Asset Allocation</h3>
           <div className="h-80 flex items-center justify-center">
-            <Pie data={assetData} options={{ responsive: true, maintainAspectRatio: false }} />
+            <Pie data={assetData} options={pieChartOptions} />
           </div>
         </div>
 
@@ -111,7 +138,7 @@ export default function Charts() {
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Monthly Expense Breakdown</h3>
           <div className="h-80 flex items-center justify-center">
-            <Doughnut data={expensesData} options={{ responsive: true, maintainAspectRatio: false }} />
+            <Doughnut data={expensesData} options={pieChartOptions} />
           </div>
         </div>
 
@@ -119,21 +146,12 @@ export default function Charts() {
         <div className="card lg:col-span-2">
           <h3 className="text-lg font-semibold mb-4">Assets vs Liabilities</h3>
           <div className="h-80">
-            <Bar
-              data={balanceData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                  },
-                },
-              }}
-            />
+            <Bar data={balanceData} options={barChartOptions} />
           </div>
         </div>
       </div>
     </div>
   );
-}
+});
+
+export default Charts;

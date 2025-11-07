@@ -72,6 +72,21 @@ const sampleData: ClientData = {
   hasDisabilityInsurance: false,
   hasUmbrellaPolicy: false,
   hasEstatePlan: false,
+  goals: {
+    retirementAge: 65,
+    retirementIncome: 100000,
+    emergencyFundMonths: 6,
+    homeDownPayment: 0,
+    educationSavings: 100000,
+    debtFreeDate: '2035-12-31',
+    netWorthTarget: 2000000,
+    annualSavingsTarget: 40000,
+    majorPurchase: {
+      description: 'Family Vacation',
+      amount: 10000,
+      targetDate: '2026-06-01',
+    },
+  },
 };
 
 export const useClientStore = create<ClientStore>()(
@@ -84,10 +99,17 @@ export const useClientStore = create<ClientStore>()(
       history: [],
 
       setClientData: (data: ClientData) => {
-        set({ currentClient: data });
-        get().calculateMetrics();
-        // Auto-save snapshot after metrics are calculated
-        setTimeout(() => get().addHistorySnapshot(), 100);
+        const metrics = calculateFinancialMetrics(data);
+        const risk = generateRiskAssessment(data, metrics);
+
+        set({
+          currentClient: data,
+          currentMetrics: metrics,
+          currentRisk: risk,
+        });
+
+        // Add history snapshot immediately since state is already updated
+        get().addHistorySnapshot();
       },
 
       calculateMetrics: () => {
@@ -157,9 +179,7 @@ export const useClientStore = create<ClientStore>()(
       },
 
       loadSampleData: () => {
-        set({ currentClient: sampleData });
-        get().calculateMetrics();
-        setTimeout(() => get().addHistorySnapshot(), 100);
+        get().setClientData(sampleData);
       },
 
       addHistorySnapshot: () => {

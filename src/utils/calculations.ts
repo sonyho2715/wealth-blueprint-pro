@@ -171,6 +171,73 @@ export function calculateHawaiiTax(taxableIncome: number): { stateTax: number; f
 }
 
 /**
+ * Calculate goal progress (0-100% for each goal)
+ */
+function calculateGoalProgress(data: ClientData, metrics: FinancialMetrics) {
+  if (!data.goals) return undefined;
+
+  const goals = data.goals;
+  const progress: NonNullable<FinancialMetrics['goalProgress']> = {};
+
+  // Retirement Readiness (based on age and savings)
+  if (goals.retirementAge) {
+    const retirementSavings = data.retirement401k + data.retirementIRA + data.brokerage;
+    const neededForRetirement = (goals.retirementIncome || metrics.totalIncome * 0.8) * 25; // 4% rule
+    progress.retirementReadiness = Math.min(100, (retirementSavings / neededForRetirement) * 100);
+  }
+
+  // Emergency Fund Progress
+  if (goals.emergencyFundMonths) {
+    const liquidAssets = data.checking + data.savings;
+    const targetEmergencyFund = metrics.totalMonthlyExpenses * goals.emergencyFundMonths;
+    progress.emergencyFund = targetEmergencyFund > 0
+      ? Math.min(100, (liquidAssets / targetEmergencyFund) * 100)
+      : 100;
+  }
+
+  // Home Down Payment Progress
+  if (goals.homeDownPayment && goals.homeDownPayment > 0) {
+    const liquidAssets = data.checking + data.savings + data.brokerage;
+    progress.homeDownPayment = Math.min(100, (liquidAssets / goals.homeDownPayment) * 100);
+  }
+
+  // Education Savings Progress
+  if (goals.educationSavings && goals.educationSavings > 0) {
+    // Assuming education savings would come from brokerage or dedicated accounts
+    const educationFunds = data.brokerage * 0.3; // Estimate 30% of brokerage for education
+    progress.educationSavings = Math.min(100, (educationFunds / goals.educationSavings) * 100);
+  }
+
+  // Debt Free Progress
+  if (goals.debtFreeDate && metrics.totalLiabilities > 0) {
+    const totalDebt = metrics.totalLiabilities;
+    const paidOff = totalDebt === 0 ? 100 : 0; // Binary for now, can be improved with payment tracking
+    progress.debtFreeProgress = paidOff;
+  } else if (metrics.totalLiabilities === 0) {
+    progress.debtFreeProgress = 100;
+  }
+
+  // Net Worth Progress
+  if (goals.netWorthTarget && goals.netWorthTarget > 0) {
+    progress.netWorthProgress = Math.min(100, Math.max(0, (metrics.netWorth / goals.netWorthTarget) * 100));
+  }
+
+  // Annual Savings Progress
+  if (goals.annualSavingsTarget && goals.annualSavingsTarget > 0) {
+    const annualSavings = metrics.totalIncome - metrics.annualExpenses;
+    progress.savingsProgress = Math.min(100, Math.max(0, (annualSavings / goals.annualSavingsTarget) * 100));
+  }
+
+  // Major Purchase Progress
+  if (goals.majorPurchase?.amount && goals.majorPurchase.amount > 0) {
+    const liquidAssets = data.checking + data.savings;
+    progress.majorPurchaseProgress = Math.min(100, (liquidAssets / goals.majorPurchase.amount) * 100);
+  }
+
+  return progress;
+}
+
+/**
  * Calculate all financial metrics from client data
  */
 export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
@@ -231,7 +298,8 @@ export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
     totalIncome
   );
 
-  return {
+  // Build initial metrics object
+  const metrics: FinancialMetrics = {
     totalAssets,
     totalLiabilities,
     netWorth,
@@ -248,6 +316,14 @@ export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
     healthScore: healthScore.total,
     healthScoreBreakdown: healthScore.breakdown,
   };
+
+  // Calculate goal progress if goals are defined
+  const goalProgress = calculateGoalProgress(data, metrics);
+  if (goalProgress) {
+    metrics.goalProgress = goalProgress;
+  }
+
+  return metrics;
 }
 
 /**

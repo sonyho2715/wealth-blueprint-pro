@@ -1,7 +1,6 @@
 import {
   FileText,
   BarChart3,
-  AlertTriangle,
   Lock,
 } from 'lucide-react';
 
@@ -14,8 +13,7 @@ interface NavigationProps {
 export default function Navigation({ activeTab, onTabChange, hasData }: NavigationProps) {
   const tabs = [
     { id: 'input', name: 'Client Input', icon: FileText, alwaysEnabled: true, step: 1, description: 'Enter financial data' },
-    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, step: 2, description: 'Comprehensive analysis' },
-    { id: 'risk', name: 'Risk Assessment', icon: AlertTriangle, step: 3, description: 'Identify critical gaps' },
+    { id: 'dashboard', name: 'Dashboard', icon: BarChart3, step: 2, description: 'Complete analysis & goals' },
   ];
 
   return (

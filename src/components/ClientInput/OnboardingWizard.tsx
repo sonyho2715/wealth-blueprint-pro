@@ -13,12 +13,13 @@ import {
   ChevronLeft,
   Sparkles,
   MapPin,
+  Target,
 } from 'lucide-react';
 
 export default function OnboardingWizard() {
   const { setClientData } = useClientStore();
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   const [formData, setFormData] = useState<ClientData>({
     name: '',
@@ -52,10 +53,48 @@ export default function OnboardingWizard() {
     hasDisabilityInsurance: false,
     hasUmbrellaPolicy: false,
     hasEstatePlan: false,
+    goals: {
+      retirementAge: 65,
+      retirementIncome: 0,
+      emergencyFundMonths: 6,
+      homeDownPayment: 0,
+      educationSavings: 0,
+      debtFreeDate: '',
+      netWorthTarget: 0,
+      annualSavingsTarget: 0,
+      majorPurchase: {
+        description: '',
+        amount: 0,
+        targetDate: '',
+      },
+    },
   });
 
   const handleChange = (field: keyof ClientData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleGoalChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      goals: {
+        ...prev.goals,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleMajorPurchaseChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      goals: {
+        ...prev.goals,
+        majorPurchase: {
+          ...prev.goals?.majorPurchase,
+          [field]: value,
+        },
+      },
+    }));
   };
 
   const handleNext = () => {
@@ -83,6 +122,7 @@ export default function OnboardingWizard() {
     { number: 4, title: 'Liabilities', icon: <TrendingDown className="w-4 h-4" /> },
     { number: 5, title: 'Expenses', icon: <Calendar className="w-4 h-4" /> },
     { number: 6, title: 'Insurance', icon: <Shield className="w-4 h-4" /> },
+    { number: 7, title: 'Goals', icon: <Target className="w-4 h-4" /> },
   ];
 
   return (
@@ -606,11 +646,188 @@ export default function OnboardingWizard() {
                 </div>
               </div>
 
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center">
+                <Target className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-gray-900 mb-2">One More Step!</h3>
+                <p className="text-gray-700">
+                  Set your financial goals to get personalized progress tracking.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Financial Goals */}
+          {currentStep === 7 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Financial Goals</h2>
+                <p className="text-gray-600">Set targets to track your progress and stay motivated</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Retirement Age */}
+                <div>
+                  <label className="label">🏖️ Desired Retirement Age</label>
+                  <input
+                    type="number"
+                    value={formData.goals?.retirementAge || ''}
+                    onChange={(e) => handleGoalChange('retirementAge', parseFloat(e.target.value) || 65)}
+                    className="input"
+                    placeholder="65"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">When do you want to retire?</p>
+                </div>
+
+                {/* Retirement Income */}
+                <div>
+                  <label className="label">💰 Annual Retirement Income Goal</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                    <input
+                      type="number"
+                      value={formData.goals?.retirementIncome || ''}
+                      onChange={(e) => handleGoalChange('retirementIncome', parseFloat(e.target.value) || 0)}
+                      className="input pl-8"
+                      placeholder="80,000"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Annual income you want in retirement</p>
+                </div>
+
+                {/* Emergency Fund */}
+                <div>
+                  <label className="label">🚨 Emergency Fund Goal (Months)</label>
+                  <input
+                    type="number"
+                    value={formData.goals?.emergencyFundMonths || ''}
+                    onChange={(e) => handleGoalChange('emergencyFundMonths', parseFloat(e.target.value) || 6)}
+                    className="input"
+                    placeholder="6"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Months of expenses to save</p>
+                </div>
+
+                {/* Home Down Payment */}
+                <div>
+                  <label className="label">🏠 Home Down Payment Goal</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                    <input
+                      type="number"
+                      value={formData.goals?.homeDownPayment || ''}
+                      onChange={(e) => handleGoalChange('homeDownPayment', parseFloat(e.target.value) || 0)}
+                      className="input pl-8"
+                      placeholder="100,000"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Down payment savings target</p>
+                </div>
+
+                {/* Education Savings */}
+                <div>
+                  <label className="label">🎓 Education Savings Goal</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                    <input
+                      type="number"
+                      value={formData.goals?.educationSavings || ''}
+                      onChange={(e) => handleGoalChange('educationSavings', parseFloat(e.target.value) || 0)}
+                      className="input pl-8"
+                      placeholder="50,000"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Total for children's education</p>
+                </div>
+
+                {/* Net Worth Target */}
+                <div>
+                  <label className="label">📈 Net Worth Target</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                    <input
+                      type="number"
+                      value={formData.goals?.netWorthTarget || ''}
+                      onChange={(e) => handleGoalChange('netWorthTarget', parseFloat(e.target.value) || 0)}
+                      className="input pl-8"
+                      placeholder="1,000,000"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Your net worth goal</p>
+                </div>
+
+                {/* Annual Savings Target */}
+                <div>
+                  <label className="label">💵 Annual Savings Target</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                    <input
+                      type="number"
+                      value={formData.goals?.annualSavingsTarget || ''}
+                      onChange={(e) => handleGoalChange('annualSavingsTarget', parseFloat(e.target.value) || 0)}
+                      className="input pl-8"
+                      placeholder="25,000"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">How much you want to save per year</p>
+                </div>
+
+                {/* Debt Free Date */}
+                <div>
+                  <label className="label">🎯 Target Debt-Free Date</label>
+                  <input
+                    type="date"
+                    value={formData.goals?.debtFreeDate || ''}
+                    onChange={(e) => handleGoalChange('debtFreeDate', e.target.value)}
+                    className="input"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">When you want to be debt-free</p>
+                </div>
+              </div>
+
+              {/* Major Purchase Section */}
+              <div className="border-2 border-purple-200 rounded-xl p-6 bg-purple-50">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">🎁 Major Purchase Goal (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="label">Description</label>
+                    <input
+                      type="text"
+                      value={formData.goals?.majorPurchase?.description || ''}
+                      onChange={(e) => handleMajorPurchaseChange('description', e.target.value)}
+                      className="input"
+                      placeholder="Vacation, Car, etc."
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Amount</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-3.5 text-gray-500 font-semibold">$</span>
+                      <input
+                        type="number"
+                        value={formData.goals?.majorPurchase?.amount || ''}
+                        onChange={(e) => handleMajorPurchaseChange('amount', parseFloat(e.target.value) || 0)}
+                        className="input pl-8"
+                        placeholder="25,000"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Target Date</label>
+                    <input
+                      type="date"
+                      value={formData.goals?.majorPurchase?.targetDate || ''}
+                      onChange={(e) => handleMajorPurchaseChange('targetDate', e.target.value)}
+                      className="input"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
                 <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Almost Done!</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">All Set!</h3>
                 <p className="text-gray-700">
-                  Click "Complete Profile" to see your personalized financial analysis and recommendations.
+                  Click "Complete Profile" to see your personalized financial analysis and goal tracking.
                 </p>
               </div>
             </div>

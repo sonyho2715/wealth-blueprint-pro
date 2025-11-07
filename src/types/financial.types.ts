@@ -48,6 +48,23 @@ export interface ClientData {
   hasUmbrellaPolicy: boolean;
   hasEstatePlan: boolean;
 
+  // Financial Goals
+  goals?: {
+    retirementAge?: number;
+    retirementIncome?: number; // Annual income desired in retirement
+    emergencyFundMonths?: number; // Target months of expenses
+    homeDownPayment?: number; // For future home or upgrade
+    educationSavings?: number; // For children's education
+    debtFreeDate?: string; // Target date to be debt-free (YYYY-MM-DD)
+    netWorthTarget?: number; // Target net worth
+    annualSavingsTarget?: number; // Annual savings goal
+    majorPurchase?: {
+      description?: string;
+      amount?: number;
+      targetDate?: string; // YYYY-MM-DD
+    };
+  };
+
   // Metadata
   savedDate?: string;
   lastModified?: string;
@@ -81,6 +98,18 @@ export interface FinancialMetrics {
     emergencyFund: number;
     debtToIncome: number;
     netWorthGrowth: number;
+  };
+
+  // Goal Progress (0-100% for each goal)
+  goalProgress?: {
+    retirementReadiness?: number; // % ready for retirement
+    emergencyFund?: number; // % of emergency fund goal met
+    homeDownPayment?: number; // % of down payment saved
+    educationSavings?: number; // % of education goal saved
+    debtFreeProgress?: number; // % of debt paid off
+    netWorthProgress?: number; // % of net worth target achieved
+    savingsProgress?: number; // % of annual savings goal achieved
+    majorPurchaseProgress?: number; // % of major purchase saved
   };
 }
 
