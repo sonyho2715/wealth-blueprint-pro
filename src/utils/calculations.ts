@@ -423,11 +423,6 @@ export function calculateFinancialMetrics(data: ClientData): FinancialMetrics {
     metrics.collegePlanning = calculateCollegePlanning(data);
   }
 
-  // Run Monte Carlo simulation for retirement
-  if (data.goals?.retirementAge) {
-    metrics.monteCarloSimulation = runMonteCarloSimulation(data, metrics);
-  }
-
   // Generate tax optimization recommendations
   metrics.taxOptimization = generateTaxOptimization(data, metrics);
 
@@ -1291,74 +1286,6 @@ function calculateCollegePlanning(data: ClientData) {
     currentSavings,
     monthlySavingsNeeded,
     projectedShortfall,
-  };
-}
-
-/**
- * Run Monte Carlo simulation for retirement planning
- */
-function runMonteCarloSimulation(data: ClientData, metrics: FinancialMetrics): NonNullable<FinancialMetrics['monteCarloSimulation']> {
-  const simulations = 1000;
-  const yearsToRetirement = data.goals?.retirementAge ? Math.max(0, data.goals.retirementAge - data.age) : 30;
-  const yearsInRetirement = 30; // Assume 30 years in retirement
-  const totalYears = yearsToRetirement + yearsInRetirement;
-
-  let retirementSavings = data.retirement401k + data.retirementIRA;
-  if (data.brokerageIsRetirement) {
-    retirementSavings += data.brokerage;
-  }
-
-  const monthlyContribution = data.monthlyRetirementContribution || 0;
-  const targetRetirementIncome = data.goals?.retirementIncome || metrics.totalIncome * 0.8;
-  const inflationRate = data.assumptions?.inflationRate || 0.03;
-  const baseReturn = data.assumptions?.investmentReturnRate || 0.07;
-
-  const results: number[] = [];
-
-  for (let sim = 0; sim < simulations; sim++) {
-    let balance = retirementSavings;
-
-    // Accumulation phase
-    for (let year = 0; year < yearsToRetirement; year++) {
-      // Variable returns using normal distribution approximation
-      // Mean = baseReturn, StdDev = 15% (typical stock market volatility)
-      const randomReturn = baseReturn + (Math.random() - 0.5) * 0.3;
-      balance = balance * (1 + randomReturn);
-      balance += monthlyContribution * 12;
-    }
-
-    // Distribution phase
-    for (let year = 0; year < yearsInRetirement; year++) {
-      const randomReturn = baseReturn + (Math.random() - 0.5) * 0.3;
-      balance = balance * (1 + randomReturn);
-
-      // Withdraw inflation-adjusted income
-      const withdrawal = targetRetirementIncome * Math.pow(1 + inflationRate, year);
-      balance -= withdrawal;
-
-      // Check if ran out of money
-      if (balance < 0) {
-        balance = 0;
-        break;
-      }
-    }
-
-    results.push(balance);
-  }
-
-  // Sort results for percentile calculation
-  results.sort((a, b) => a - b);
-
-  const successCount = results.filter(r => r > 0).length;
-  const successRate = (successCount / simulations) * 100;
-
-  return {
-    successRate: Math.round(successRate * 10) / 10,
-    medianNetWorth: results[Math.floor(simulations / 2)],
-    percentile10: results[Math.floor(simulations * 0.1)],
-    percentile90: results[Math.floor(simulations * 0.9)],
-    yearsSimulated: totalYears,
-    simulationsRun: simulations,
   };
 }
 
